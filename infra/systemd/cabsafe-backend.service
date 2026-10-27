@@ -1,0 +1,27 @@
+[Unit]
+Description=CabSafe Chennai Node.js + Express + Socket.IO Backend Service
+Documentation=https://github.com/dhanush190312/online-cab
+After=network-online.target
+Wants=network-online.target
+
+[Service]
+Type=simple
+User=cabsafe
+Group=cabsafe
+WorkingDirectory=/opt/cabsafe
+EnvironmentFile=/opt/cabsafe/.env
+ExecStart=/usr/bin/npx tsx server.ts
+Restart=on-failure
+RestartSec=5
+KillSignal=SIGTERM
+TimeoutStopSec=30
+LimitNOFILE=65535
+NoNewPrivileges=true
+PrivateTmp=true
+ProtectSystem=full
+StandardOutput=journal
+StandardError=journal
+SyslogIdentifier=cabsafe-backend
+
+[Install]
+WantedBy=multi-user.target

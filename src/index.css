@@ -1,0 +1,101 @@
+@import "tailwindcss";
+
+:root {
+  --font-display: 'Plus Jakarta Sans', 'DM Sans', -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
+  --font-sans: 'DM Sans', 'Plus Jakarta Sans', -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
+  --font-mono: 'DM Sans', 'Plus Jakarta Sans', 'JetBrains Mono', -apple-system, BlinkMacSystemFont, sans-serif;
+}
+
+body {
+  font-family: var(--font-sans);
+  background-color: #F1F5F9;
+  color: #0F172A;
+  margin: 0;
+  padding: 0;
+  overflow-x: hidden;
+}
+
+h1, h2, h3, h4, .font-display {
+  font-family: var(--font-display) !important;
+}
+
+.font-mono, .tabular-nums {
+  font-family: var(--font-sans) !important;
+  font-variant-numeric: tabular-nums !important;
+  letter-spacing: 0.01em;
+}
+
+/* Custom Leaflet container styling inside MobileFrame */
+.leaflet-container {
+  font-family: var(--font-sans) !important;
+  background-color: #F8FAFC !important;
+  z-index: 1 !important;
+}
+
+.cabsafe-dark-osm-tiles {
+  filter: brightness(98%) contrast(98%) saturate(88%);
+}
+
+.leaflet-control-attribution {
+  font-size: 9px !important;
+  background: rgba(255, 255, 255, 0.85) !important;
+  color: #64748B !important;
+  backdrop-filter: blur(4px);
+}
+
+.custom-cabsafe-pin {
+  background: transparent !important;
+  border: none !important;
+  width: auto !important;
+  height: auto !important;
+}
+
+/* Hide scrollbars across mobile frames and inner lists */
+* {
+  scrollbar-width: none;
+  -ms-overflow-style: none;
+}
+
+*::-webkit-scrollbar {
+  display: none;
+  width: 0 !important;
+  height: 0 !important;
+}
+
+.no-scrollbar {
+  scrollbar-width: none !important;
+  -ms-overflow-style: none !important;
+}
+
+.no-scrollbar::-webkit-scrollbar {
+  display: none !important;
+  width: 0 !important;
+  height: 0 !important;
+}
+
+/* Custom animated radar pulse for active pickup beacon - Royal Red */
+@keyframes cabsafePulse {
+  0% {
+    transform: scale(0.6);
+    opacity: 0.85;
+    box-shadow: 0 0 0 0 rgba(220, 38, 38, 0.6);
+  }
+  70% {
+    transform: scale(2.2);
+    opacity: 0.15;
+    box-shadow: 0 0 0 12px rgba(220, 38, 38, 0);
+  }
+  100% {
+    transform: scale(2.6);
+    opacity: 0;
+  }
+}
+
+.custom-cabsafe-car-pin {
+  background: transparent !important;
+  border: none !important;
+  width: auto !important;
+  height: auto !important;
+}
+
+

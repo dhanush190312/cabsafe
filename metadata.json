@@ -1,0 +1,6 @@
+{
+  "name": "CabSafe — Online Cab Booking & Dispatch",
+  "description": "Real-time mobile-friendly cab booking, driver dispatch, OTP verification, live GPS tracking, and explainable multi-factor driver matching platform.",
+  "requestFramePermissions": ["geolocation"],
+  "majorCapabilities": ["MAJOR_CAPABILITY_SERVER_SIDE_GEMINI_API"]
+}

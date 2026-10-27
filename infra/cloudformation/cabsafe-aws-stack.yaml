@@ -1,0 +1,761 @@
+AWSTemplateFormatVersion: '2010-09-09'
+Description: >
+  CabSafe Chennai — Production AWS Cloud Infrastructure Stack (ap-south-1 Mumbai).
+  Provisions Multi-AZ VPC, DynamoDB Gateway Endpoint, Least-Privilege IAM Role,
+  4 DynamoDB Tables with GSIs, Application Load Balancer (HTTPS + WebSocket Stickiness),
+  EC2 Launch Template (IMDSv2 enforced), and Multi-AZ Auto Scaling Group.
+  IMPORTANT: Do NOT deploy without explicit user approval and valid ACM Certificate ARN.
+
+Parameters:
+  EnvironmentName:
+    Type: String
+    Default: production
+    AllowedValues:
+      - development
+      - staging
+      - production
+    Description: Deployment environment label.
+
+  VpcCidr:
+    Type: String
+    Default: 10.20.0.0/16
+    Description: CIDR block for the CabSafe VPC.
+
+  PublicSubnet1Cidr:
+    Type: String
+    Default: 10.20.1.0/24
+    Description: CIDR block for Public Subnet 1 (AZ-a, ALB).
+
+  PublicSubnet2Cidr:
+    Type: String
+    Default: 10.20.2.0/24
+    Description: CIDR block for Public Subnet 2 (AZ-b, ALB).
+
+  PrivateSubnet1Cidr:
+    Type: String
+    Default: 10.20.11.0/24
+    Description: CIDR block for Private Application Subnet 1 (AZ-a, EC2 ASG).
+
+  PrivateSubnet2Cidr:
+    Type: String
+    Default: 10.20.12.0/24
+    Description: CIDR block for Private Application Subnet 2 (AZ-b, EC2 ASG).
+
+  AcmCertificateArn:
+    Type: String
+    Default: ''
+    Description: >
+      ARN of the AWS Certificate Manager (ACM) TLS certificate for the ALB HTTPS listener.
+      Leave empty ONLY when validating template syntax; required for HTTPS listener creation.
+
+  InstanceType:
+    Type: String
+    Default: t3.small
+    AllowedValues:
+      - t3.micro
+      - t3.small
+      - t3.medium
+    Description: EC2 instance type for CabSafe Node.js/Socket.IO backend servers.
+
+  LatestAmiId:
+    Type: 'AWS::SSM::Parameter::Value<AWS::EC2::Image::Id>'
+    Default: /aws/service/ami-amazon-linux-latest/al2023-ami-kernel-6.1-x86_64
+    Description: Latest Amazon Linux 2023 x86_64 AMI resolved from SSM Parameter Store.
+
+  AsgMinSize:
+    Type: Number
+    Default: 2
+    MinValue: 1
+    MaxValue: 6
+    Description: Minimum number of EC2 instances across Availability Zones.
+
+  AsgDesiredCapacity:
+    Type: Number
+    Default: 2
+    MinValue: 1
+    MaxValue: 6
+    Description: Desired number of EC2 instances across Availability Zones.
+
+  AsgMaxSize:
+    Type: Number
+    Default: 4
+    MinValue: 2
+    MaxValue: 10
+    Description: Maximum number of EC2 instances during Chennai peak commute scaling.
+
+  AppGitRepoUrl:
+    Type: String
+    Default: https://github.com/dhanush190312/online-cab.git
+    Description: Git repository URL cloned by EC2 instances during bootstrap.
+
+  GitBranch:
+    Type: String
+    Default: main
+    Description: Git branch or tag to checkout on EC2 instances.
+
+  JwtSecret:
+    Type: String
+    NoEcho: true
+    Default: cabsafe-production-jwt-auth-key-2026-chennai
+    Description: Secret key used to cryptographically sign and verify User and Captain JWT tokens.
+
+
+Conditions:
+  HasTlsCertificate: !Not [!Equals [!Ref AcmCertificateArn, '']]
+
+Resources:
+  # ============================================================================
+  # 1. AMAZON VPC, SUBNETS, ROUTE TABLES & DYNAMODB GATEWAY VPC ENDPOINT
+  # ============================================================================
+  CabSafeVpc:
+    Type: AWS::EC2::VPC
+    Properties:
+      CidrBlock: !Ref VpcCidr
+      EnableDnsSupport: true
+      EnableDnsHostnames: true
+      Tags:
+        - Key: Name
+          Value: !Sub 'CabSafe-VPC-${EnvironmentName}'
+        - Key: Project
+          Value: CabSafe-Chennai
+
+  CabSafeInternetGateway:
+    Type: AWS::EC2::InternetGateway
+    Properties:
+      Tags:
+        - Key: Name
+          Value: !Sub 'CabSafe-IGW-${EnvironmentName}'
+
+  CabSafeVpcGatewayAttachment:
+    Type: AWS::EC2::VPCGatewayAttachment
+    Properties:
+      VpcId: !Ref CabSafeVpc
+      InternetGatewayId: !Ref CabSafeInternetGateway
+
+  PublicSubnet1:
+    Type: AWS::EC2::Subnet
+    Properties:
+      VpcId: !Ref CabSafeVpc
+      AvailabilityZone: !Select [0, !GetAZs '']
+      CidrBlock: !Ref PublicSubnet1Cidr
+      MapPublicIpOnLaunch: true
+      Tags:
+        - Key: Name
+          Value: !Sub 'CabSafe-PublicSubnet-AZ1-${EnvironmentName}'
+
+  PublicSubnet2:
+    Type: AWS::EC2::Subnet
+    Properties:
+      VpcId: !Ref CabSafeVpc
+      AvailabilityZone: !Select [1, !GetAZs '']
+      CidrBlock: !Ref PublicSubnet2Cidr
+      MapPublicIpOnLaunch: true
+      Tags:
+        - Key: Name
+          Value: !Sub 'CabSafe-PublicSubnet-AZ2-${EnvironmentName}'
+
+  PrivateAppSubnet1:
+    Type: AWS::EC2::Subnet
+    Properties:
+      VpcId: !Ref CabSafeVpc
+      AvailabilityZone: !Select [0, !GetAZs '']
+      CidrBlock: !Ref PrivateSubnet1Cidr
+      MapPublicIpOnLaunch: false
+      Tags:
+        - Key: Name
+          Value: !Sub 'CabSafe-PrivateAppSubnet-AZ1-${EnvironmentName}'
+
+  PrivateAppSubnet2:
+    Type: AWS::EC2::Subnet
+    Properties:
+      VpcId: !Ref CabSafeVpc
+      AvailabilityZone: !Select [1, !GetAZs '']
+      CidrBlock: !Ref PrivateSubnet2Cidr
+      MapPublicIpOnLaunch: false
+      Tags:
+        - Key: Name
+          Value: !Sub 'CabSafe-PrivateAppSubnet-AZ2-${EnvironmentName}'
+
+  PublicRouteTable:
+    Type: AWS::EC2::RouteTable
+    Properties:
+      VpcId: !Ref CabSafeVpc
+      Tags:
+        - Key: Name
+          Value: !Sub 'CabSafe-PublicRT-${EnvironmentName}'
+
+  PublicDefaultRoute:
+    Type: AWS::EC2::Route
+    DependsOn: CabSafeVpcGatewayAttachment
+    Properties:
+      RouteTableId: !Ref PublicRouteTable
+      DestinationCidrBlock: 0.0.0.0/0
+      GatewayId: !Ref CabSafeInternetGateway
+
+  PublicSubnet1RouteTableAssociation:
+    Type: AWS::EC2::SubnetRouteTableAssociation
+    Properties:
+      SubnetId: !Ref PublicSubnet1
+      RouteTableId: !Ref PublicRouteTable
+
+  PublicSubnet2RouteTableAssociation:
+    Type: AWS::EC2::SubnetRouteTableAssociation
+    Properties:
+      SubnetId: !Ref PublicSubnet2
+      RouteTableId: !Ref PublicRouteTable
+
+  PrivateAppRouteTable:
+    Type: AWS::EC2::RouteTable
+    Properties:
+      VpcId: !Ref CabSafeVpc
+      Tags:
+        - Key: Name
+          Value: !Sub 'CabSafe-PrivateAppRT-${EnvironmentName}'
+
+  PrivateSubnet1RouteTableAssociation:
+    Type: AWS::EC2::SubnetRouteTableAssociation
+    Properties:
+      SubnetId: !Ref PrivateAppSubnet1
+      RouteTableId: !Ref PrivateAppRouteTable
+
+  PrivateSubnet2RouteTableAssociation:
+    Type: AWS::EC2::SubnetRouteTableAssociation
+    Properties:
+      SubnetId: !Ref PrivateAppSubnet2
+      RouteTableId: !Ref PrivateAppRouteTable
+
+  # Zero-Cost Gateway VPC Endpoint for Amazon DynamoDB (keeps DynamoDB traffic inside AWS backbone)
+  DynamoDbGatewayVpcEndpoint:
+    Type: AWS::EC2::VPCEndpoint
+    Properties:
+      VpcId: !Ref CabSafeVpc
+      ServiceName: !Sub 'com.amazonaws.${AWS::Region}.dynamodb'
+      VpcEndpointType: Gateway
+      RouteTableIds:
+        - !Ref PrivateAppRouteTable
+        - !Ref PublicRouteTable
+
+  # ============================================================================
+  # 2. SECURITY GROUPS (ALB & EC2 BACKEND)
+  # ============================================================================
+  CabSafeAlbSecurityGroup:
+    Type: AWS::EC2::SecurityGroup
+    Properties:
+      GroupName: !Sub 'CabSafe-ALB-SG-${EnvironmentName}'
+      GroupDescription: 'Internet-facing Application Load Balancer security group (HTTPS 443 and HTTP 80 redirect)'
+      VpcId: !Ref CabSafeVpc
+      SecurityGroupIngress:
+        - IpProtocol: tcp
+          FromPort: 443
+          ToPort: 443
+          CidrIp: 0.0.0.0/0
+          Description: 'Allow HTTPS API and WSS Socket.IO traffic from Android and web clients'
+        - IpProtocol: tcp
+          FromPort: 80
+          ToPort: 80
+          CidrIp: 0.0.0.0/0
+          Description: 'Allow HTTP 80 for 301 redirect to HTTPS 443'
+      SecurityGroupEgress:
+        - IpProtocol: tcp
+          FromPort: 3000
+          ToPort: 3000
+          CidrIp: !Ref VpcCidr
+          Description: 'Forward traffic only to backend EC2 instances on port 3000'
+      Tags:
+        - Key: Name
+          Value: !Sub 'CabSafe-ALB-SG-${EnvironmentName}'
+
+  CabSafeEc2SecurityGroup:
+    Type: AWS::EC2::SecurityGroup
+    Properties:
+      GroupName: !Sub 'CabSafe-EC2-SG-${EnvironmentName}'
+      GroupDescription: 'Private EC2 backend security group (accepts port 3000 strictly from ALB SG; no SSH 22)'
+      VpcId: !Ref CabSafeVpc
+      SecurityGroupIngress:
+        - IpProtocol: tcp
+          FromPort: 3000
+          ToPort: 3000
+          SourceSecurityGroupId: !Ref CabSafeAlbSecurityGroup
+          Description: 'Allow HTTP/WebSocket traffic on port 3000 strictly from CabSafe ALB'
+      SecurityGroupEgress:
+        - IpProtocol: tcp
+          FromPort: 443
+          ToPort: 443
+          CidrIp: 0.0.0.0/0
+          Description: 'Allow outbound HTTPS 443 to DynamoDB Gateway Endpoint, SSM, and OSM/OSRM fallback'
+      Tags:
+        - Key: Name
+          Value: !Sub 'CabSafe-EC2-SG-${EnvironmentName}'
+
+  # ============================================================================
+  # 3. AMAZON DYNAMODB TABLES & GLOBAL SECONDARY INDEXES
+  # ============================================================================
+  CabSafeUsersTable:
+    Type: AWS::DynamoDB::Table
+    DeletionPolicy: Retain
+    UpdateReplacePolicy: Retain
+    Properties:
+      TableName: CabSafe-Users
+      BillingMode: PAY_PER_REQUEST
+      AttributeDefinitions:
+        - AttributeName: userId
+          AttributeType: S
+        - AttributeName: email
+          AttributeType: S
+      KeySchema:
+        - AttributeName: userId
+          KeyType: HASH
+      GlobalSecondaryIndexes:
+        - IndexName: EmailIndex
+          KeySchema:
+            - AttributeName: email
+              KeyType: HASH
+          Projection:
+            ProjectionType: ALL
+      PointInTimeRecoverySpecification:
+        PointInTimeRecoveryEnabled: true
+      SSESpecification:
+        SSEEnabled: true
+      Tags:
+        - Key: Project
+          Value: CabSafe-Chennai
+        - Key: Environment
+          Value: !Ref EnvironmentName
+
+  CabSafeCaptainsTable:
+    Type: AWS::DynamoDB::Table
+    DeletionPolicy: Retain
+    UpdateReplacePolicy: Retain
+    Properties:
+      TableName: CabSafe-Captains
+      BillingMode: PAY_PER_REQUEST
+      AttributeDefinitions:
+        - AttributeName: captainId
+          AttributeType: S
+        - AttributeName: email
+          AttributeType: S
+        - AttributeName: status
+          AttributeType: S
+        - AttributeName: vehicleType
+          AttributeType: S
+      KeySchema:
+        - AttributeName: captainId
+          KeyType: HASH
+      GlobalSecondaryIndexes:
+        - IndexName: EmailIndex
+          KeySchema:
+            - AttributeName: email
+              KeyType: HASH
+          Projection:
+            ProjectionType: ALL
+        - IndexName: StatusVehicleIndex
+          KeySchema:
+            - AttributeName: status
+              KeyType: HASH
+            - AttributeName: vehicleType
+              KeyType: RANGE
+          Projection:
+            ProjectionType: ALL
+      PointInTimeRecoverySpecification:
+        PointInTimeRecoveryEnabled: true
+      SSESpecification:
+        SSEEnabled: true
+      Tags:
+        - Key: Project
+          Value: CabSafe-Chennai
+        - Key: Environment
+          Value: !Ref EnvironmentName
+
+  CabSafeRidesTable:
+    Type: AWS::DynamoDB::Table
+    DeletionPolicy: Retain
+    UpdateReplacePolicy: Retain
+    Properties:
+      TableName: CabSafe-Rides
+      BillingMode: PAY_PER_REQUEST
+      AttributeDefinitions:
+        - AttributeName: rideId
+          AttributeType: S
+        - AttributeName: userId
+          AttributeType: S
+        - AttributeName: captainId
+          AttributeType: S
+        - AttributeName: status
+          AttributeType: S
+        - AttributeName: createdAt
+          AttributeType: S
+      KeySchema:
+        - AttributeName: rideId
+          KeyType: HASH
+      GlobalSecondaryIndexes:
+        - IndexName: UserRidesIndex
+          KeySchema:
+            - AttributeName: userId
+              KeyType: HASH
+            - AttributeName: createdAt
+              KeyType: RANGE
+          Projection:
+            ProjectionType: ALL
+        - IndexName: CaptainRidesIndex
+          KeySchema:
+            - AttributeName: captainId
+              KeyType: HASH
+            - AttributeName: createdAt
+              KeyType: RANGE
+          Projection:
+            ProjectionType: ALL
+        - IndexName: StatusCreatedIndex
+          KeySchema:
+            - AttributeName: status
+              KeyType: HASH
+            - AttributeName: createdAt
+              KeyType: RANGE
+          Projection:
+            ProjectionType: ALL
+      PointInTimeRecoverySpecification:
+        PointInTimeRecoveryEnabled: true
+      SSESpecification:
+        SSEEnabled: true
+      Tags:
+        - Key: Project
+          Value: CabSafe-Chennai
+        - Key: Environment
+          Value: !Ref EnvironmentName
+
+  CabSafeTokenBlacklistTable:
+    Type: AWS::DynamoDB::Table
+    Properties:
+      TableName: CabSafe-TokenBlacklist
+      BillingMode: PAY_PER_REQUEST
+      AttributeDefinitions:
+        - AttributeName: tokenHash
+          AttributeType: S
+      KeySchema:
+        - AttributeName: tokenHash
+          KeyType: HASH
+      TimeToLiveSpecification:
+        AttributeName: expiresAt
+        Enabled: true
+      SSESpecification:
+        SSEEnabled: true
+      Tags:
+        - Key: Project
+          Value: CabSafe-Chennai
+        - Key: Environment
+          Value: !Ref EnvironmentName
+
+  # ============================================================================
+  # 4. AWS IAM LEAST-PRIVILEGE EC2 INSTANCE ROLE & INSTANCE PROFILE
+  # ============================================================================
+  CabSafeEc2InstanceRole:
+    Type: AWS::IAM::Role
+    Properties:
+      RoleName: !Sub 'CabSafe-EC2-InstanceRole-${EnvironmentName}'
+      AssumeRolePolicyDocument:
+        Version: '2012-10-17'
+        Statement:
+          - Effect: Allow
+            Principal:
+              Service: ec2.amazonaws.com
+            Action: sts:AssumeRole
+      ManagedPolicyArns:
+        - arn:aws:iam::aws:policy/AmazonSSMManagedInstanceCore
+      Policies:
+        - PolicyName: CabSafeDynamoDbLeastPrivilegePolicy
+          PolicyDocument:
+            Version: '2012-10-17'
+            Statement:
+              - Sid: CabSafeDynamoDBTableAndIndexAccess
+                Effect: Allow
+                Action:
+                  - dynamodb:GetItem
+                  - dynamodb:PutItem
+                  - dynamodb:UpdateItem
+                  - dynamodb:Query
+                  - dynamodb:TransactWriteItems
+                  - dynamodb:DescribeTable
+                Resource:
+                  - !GetAtt CabSafeUsersTable.Arn
+                  - !Sub '${CabSafeUsersTable.Arn}/index/*'
+                  - !GetAtt CabSafeCaptainsTable.Arn
+                  - !Sub '${CabSafeCaptainsTable.Arn}/index/*'
+                  - !GetAtt CabSafeRidesTable.Arn
+                  - !Sub '${CabSafeRidesTable.Arn}/index/*'
+                  - !GetAtt CabSafeTokenBlacklistTable.Arn
+              - Sid: CabSafeCloudWatchLogsWrite
+                Effect: Allow
+                Action:
+                  - logs:CreateLogGroup
+                  - logs:CreateLogStream
+                  - logs:PutLogEvents
+                Resource: !Sub 'arn:aws:logs:${AWS::Region}:${AWS::AccountId}:log-group:/cabsafe/backend:*'
+              - Sid: CabSafeSsmParametersRead
+                Effect: Allow
+                Action:
+                  - ssm:GetParameter
+                  - ssm:GetParameters
+                Resource: !Sub 'arn:aws:ssm:${AWS::Region}:${AWS::AccountId}:parameter/cabsafe/*'
+
+  CabSafeEc2InstanceProfile:
+    Type: AWS::IAM::InstanceProfile
+    Properties:
+      InstanceProfileName: !Sub 'CabSafe-EC2-InstanceProfile-${EnvironmentName}'
+      Roles:
+        - !Ref CabSafeEc2InstanceRole
+
+  # ============================================================================
+  # 5. APPLICATION LOAD BALANCER (ALB), TARGET GROUP & LISTENERS
+  # ============================================================================
+  CabSafeApplicationLoadBalancer:
+    Type: AWS::ElasticLoadBalancingV2::LoadBalancer
+    Properties:
+      Name: !Sub 'CabSafe-ALB-${EnvironmentName}'
+      Scheme: internet-facing
+      Type: application
+      Subnets:
+        - !Ref PublicSubnet1
+        - !Ref PublicSubnet2
+      SecurityGroups:
+        - !Ref CabSafeAlbSecurityGroup
+      LoadBalancerAttributes:
+        - Key: idle_timeout.timeout_seconds
+          Value: '120'
+        - Key: routing.http2.enabled
+          Value: 'true'
+      Tags:
+        - Key: Name
+          Value: !Sub 'CabSafe-ALB-${EnvironmentName}'
+
+  CabSafeTargetGroup:
+    Type: AWS::ElasticLoadBalancingV2::TargetGroup
+    Properties:
+      Name: !Sub 'CabSafe-TG-${EnvironmentName}'
+      VpcId: !Ref CabSafeVpc
+      Port: 3000
+      Protocol: HTTP
+      TargetType: instance
+      HealthCheckProtocol: HTTP
+      HealthCheckPath: /api/health
+      HealthCheckIntervalSeconds: 15
+      HealthCheckTimeoutSeconds: 5
+      HealthyThresholdCount: 2
+      UnhealthyThresholdCount: 3
+      Matcher:
+        HttpCode: '200'
+      TargetGroupAttributes:
+        - Key: deregistration_delay.timeout_seconds
+          Value: '30'
+        - Key: stickiness.enabled
+          Value: 'true'
+        - Key: stickiness.type
+          Value: lb_cookie
+        - Key: stickiness.lb_cookie.duration_seconds
+          Value: '86400'
+
+  CabSafeAlbHttpListener:
+    Type: AWS::ElasticLoadBalancingV2::Listener
+    Properties:
+      LoadBalancerArn: !Ref CabSafeApplicationLoadBalancer
+      Port: 80
+      Protocol: HTTP
+      DefaultActions:
+        - !If
+          - HasTlsCertificate
+          - Type: redirect
+            RedirectConfig:
+              Protocol: HTTPS
+              Port: '443'
+              StatusCode: HTTP_301
+          - Type: forward
+            TargetGroupArn: !Ref CabSafeTargetGroup
+
+  CabSafeAlbHttpsListener:
+    Type: AWS::ElasticLoadBalancingV2::Listener
+    Condition: HasTlsCertificate
+    Properties:
+      LoadBalancerArn: !Ref CabSafeApplicationLoadBalancer
+      Port: 443
+      Protocol: HTTPS
+      SslPolicy: ELBSecurityPolicy-TLS13-1-2-2021-06
+      Certificates:
+        - CertificateArn: !Ref AcmCertificateArn
+      DefaultActions:
+        - Type: forward
+          TargetGroupArn: !Ref CabSafeTargetGroup
+
+  # ============================================================================
+  # 6. EC2 LAUNCH TEMPLATE & MULTI-AZ AUTO SCALING GROUP
+  # ============================================================================
+  CabSafeLaunchTemplate:
+    Type: AWS::EC2::LaunchTemplate
+    Properties:
+      LaunchTemplateName: !Sub 'CabSafe-LaunchTemplate-${EnvironmentName}'
+      LaunchTemplateData:
+        ImageId: !Ref LatestAmiId
+        InstanceType: !Ref InstanceType
+        IamInstanceProfile:
+          Arn: !GetAtt CabSafeEc2InstanceProfile.Arn
+        SecurityGroupIds:
+          - !Ref CabSafeEc2SecurityGroup
+        MetadataOptions:
+          HttpEndpoint: enabled
+          HttpTokens: required
+          HttpPutResponseHopLimit: 1
+        Monitoring:
+          Enabled: true
+        TagSpecifications:
+          - ResourceType: instance
+            Tags:
+              - Key: Name
+                Value: !Sub 'CabSafe-Backend-EC2-${EnvironmentName}'
+              - Key: Project
+                Value: CabSafe-Chennai
+        UserData:
+          Fn::Base64: !Sub |
+            #!/bin/bash
+            set -euo pipefail
+            exec > >(tee -a /var/log/cabsafe-bootstrap.log) 2>&1
+            echo "=== Starting CabSafe Backend Bootstrap at $(date) ==="
+
+            # 1. Install Node.js 20 LTS and Git on Amazon Linux 2023
+            dnf update -y
+            dnf install -y git nodejs npm
+
+            # 2. Create dedicated non-root service user
+            id -u cabsafe &>/dev/null || useradd --system --create-home --shell /sbin/nologin cabsafe
+
+            # 3. Clone repository and build frontend assets
+            mkdir -p /opt/cabsafe
+            if [ ! -d /opt/cabsafe/.git ]; then
+              git clone -b "${GitBranch}" "${AppGitRepoUrl}" /opt/cabsafe
+            else
+              cd /opt/cabsafe
+              git fetch origin
+              git checkout "${GitBranch}"
+              git pull origin "${GitBranch}"
+            fi
+            cd /opt/cabsafe
+            npm install --legacy-peer-deps
+            npm run build
+            chown -R cabsafe:cabsafe /opt/cabsafe
+
+            # 4. Write runtime environment configuration
+            cat <<EOF > /opt/cabsafe/.env
+            NODE_ENV=production
+            PORT=3000
+            PERSISTENCE_MODE=dynamodb
+            AWS_REGION=${AWS::Region}
+            DYNAMODB_USERS_TABLE=${CabSafeUsersTable}
+            DYNAMODB_CAPTAINS_TABLE=${CabSafeCaptainsTable}
+            DYNAMODB_RIDES_TABLE=${CabSafeRidesTable}
+            DYNAMODB_BLACKLIST_TABLE=${CabSafeTokenBlacklistTable}
+            JWT_SECRET=${JwtSecret}
+            CORS_ORIGINS=http://${CabSafeApplicationLoadBalancer.DNSName},https://${CabSafeApplicationLoadBalancer.DNSName}
+            EOF
+            chown cabsafe:cabsafe /opt/cabsafe/.env
+            chmod 0600 /opt/cabsafe/.env
+
+            # 5. Register systemd service with graceful SIGTERM draining
+            cat <<'EOF' > /etc/systemd/system/cabsafe-backend.service
+            [Unit]
+            Description=CabSafe Chennai Node.js + Express + Socket.IO Backend Service
+            After=network.target network-online.target
+            Wants=network-online.target
+
+            [Service]
+            Type=simple
+            User=cabsafe
+            Group=cabsafe
+            WorkingDirectory=/opt/cabsafe
+            EnvironmentFile=/opt/cabsafe/.env
+            ExecStart=/usr/bin/npx tsx server.ts
+            Restart=on-failure
+            RestartSec=5
+            KillSignal=SIGTERM
+            TimeoutStopSec=30
+            LimitNOFILE=65535
+            StandardOutput=journal
+            StandardError=journal
+            SyslogIdentifier=cabsafe-backend
+
+            [Install]
+            WantedBy=multi-user.target
+            EOF
+
+            systemctl daemon-reload
+            systemctl enable cabsafe-backend.service
+            systemctl restart cabsafe-backend.service
+            echo "=== CabSafe Backend Bootstrap Finished Successfully at $(date) ==="
+
+  CabSafeAutoScalingGroup:
+    Type: AWS::AutoScaling::AutoScalingGroup
+    Properties:
+      AutoScalingGroupName: !Sub 'CabSafe-ASG-${EnvironmentName}'
+      VPCZoneIdentifier:
+        - !Ref PrivateAppSubnet1
+        - !Ref PrivateAppSubnet2
+      LaunchTemplate:
+        LaunchTemplateId: !Ref CabSafeLaunchTemplate
+        Version: !GetAtt CabSafeLaunchTemplate.LatestVersionNumber
+      MinSize: !Ref AsgMinSize
+      DesiredCapacity: !Ref AsgDesiredCapacity
+      MaxSize: !Ref AsgMaxSize
+      HealthCheckType: ELB
+      HealthCheckGracePeriod: 120
+      TargetGroupARNs:
+        - !Ref CabSafeTargetGroup
+      TerminationPolicies:
+        - OldestLaunchTemplate
+        - OldestInstance
+      Tags:
+        - Key: Name
+          Value: !Sub 'CabSafe-ASG-Instance-${EnvironmentName}'
+          PropagateAtLaunch: true
+
+  CabSafeCpuTargetTrackingPolicy:
+    Type: AWS::AutoScaling::ScalingPolicy
+    Properties:
+      AutoScalingGroupName: !Ref CabSafeAutoScalingGroup
+      PolicyType: TargetTrackingScaling
+      TargetTrackingConfiguration:
+        PredefinedMetricSpecification:
+          PredefinedMetricType: ASGAverageCPUUtilization
+        TargetValue: 65.0
+
+Outputs:
+  AlbDnsName:
+    Description: 'Public DNS name of the CabSafe Application Load Balancer'
+    Value: !GetAtt CabSafeApplicationLoadBalancer.DNSName
+    Export:
+      Name: !Sub '${AWS::StackName}-AlbDnsName'
+
+  ApiBaseUrl:
+    Description: 'Load-balanced CabSafe API Base URL for Android BuildConfig'
+    Value: !If
+      - HasTlsCertificate
+      - !Sub 'https://${CabSafeApplicationLoadBalancer.DNSName}'
+      - !Sub 'http://${CabSafeApplicationLoadBalancer.DNSName}'
+
+  VpcId:
+    Description: 'CabSafe VPC ID'
+    Value: !Ref CabSafeVpc
+
+  Ec2InstanceRoleArn:
+    Description: 'Least-privilege IAM Role ARN attached to CabSafe EC2 instances'
+    Value: !GetAtt CabSafeEc2InstanceRole.Arn
+
+  DynamoDbUsersTableName:
+    Description: 'DynamoDB Users Table Name'
+    Value: !Ref CabSafeUsersTable
+
+  DynamoDbCaptainsTableName:
+    Description: 'DynamoDB Captains Table Name'
+    Value: !Ref CabSafeCaptainsTable
+
+  DynamoDbRidesTableName:
+    Description: 'DynamoDB Rides Table Name'
+    Value: !Ref CabSafeRidesTable
+
+  DynamoDbBlacklistTableName:
+    Description: 'DynamoDB Token Blacklist Table Name'
+    Value: !Ref CabSafeTokenBlacklistTable
