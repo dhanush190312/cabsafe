@@ -1164,6 +1164,37 @@ async function startServer() {
         return;
       }
 
+      if (action === 'captain-cancel-ride') {
+        const assignedCapId =
+          typeof targetRide.captain === 'object' && targetRide.captain
+            ? targetRide.captain._id
+            : String(targetRide.captain || targetRide.preferredCaptainId || targetRide.matchExplanation?.captainId || '671b00000000000000000101');
+
+        const cancelled = repo.cancelRide({
+          rideId: targetRide._id,
+          actorRole: 'captain',
+          actorId: assignedCapId,
+          reason: 'Captain encountered unexpected severe traffic congestion near Panagal Park.',
+        });
+
+        const userPayload = sanitizeRideForRole(cancelled, 'user');
+        const capPayload = sanitizeRideForRole(cancelled, 'captain');
+
+        if (typeof cancelled.user === 'object' && cancelled.user) {
+          sendMessageToSocketId(cancelled.user.socketId, {
+            event: 'ride-cancelled',
+            data: userPayload,
+          });
+          io.to(`user:${cancelled.user._id}`).emit('ride-cancelled', userPayload);
+        }
+        io.emit('ride-updated', capPayload);
+        res.status(200).json({
+          message: `[SIMULATION] Captain cancelled ride due to traffic.`,
+          ride: cancelled,
+        });
+        return;
+      }
+
       if (action === 'start-ride-otp') {
         const assignedCapId =
           typeof targetRide.captain === 'object' && targetRide.captain

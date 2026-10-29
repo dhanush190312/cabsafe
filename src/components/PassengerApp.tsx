@@ -311,6 +311,10 @@ export const PassengerApp: React.FC<PassengerAppProps> = ({
       setPickupCoords(data.originCoords);
       setDestinationCoords(data.destinationCoords);
       setFareEstimate(data);
+      const topMatch = data.candidateRankings?.find((c) => c.vehicleType === selectedVehicle) || data.candidateRankings?.[0];
+      if (topMatch) {
+        setSelectedCaptainId(topMatch.captainId);
+      }
       onFarePreviewChange?.(data);
       setBookingStep(targetStage);
     } catch (err) {
@@ -567,6 +571,38 @@ export const PassengerApp: React.FC<PassengerAppProps> = ({
           rideId: activeRide._id,
         },
       });
+      await onRefreshState();
+    } catch (err) {
+      setBookingError((err as Error).message);
+    } finally {
+      setBookingBusy(false);
+    }
+  };
+
+  const handleRebookNextCaptain = async () => {
+    if (bookingBusy) return;
+    setBookingBusy(true);
+    setBookingError(null);
+    try {
+      const p = activeRide?.pickup || pickup;
+      const d = activeRide?.destination || destination;
+      const pCoords = activeRide?.pickupCoords || pickupCoords;
+      const dCoords = activeRide?.destinationCoords || destinationCoords;
+      const vType = activeRide?.vehicleType || selectedVehicle;
+
+      const created = await apiRequest<RideRecord>('/rides/create', {
+        method: 'POST',
+        role: 'user',
+        body: {
+          pickup: p,
+          destination: d,
+          pickupCoords: pCoords,
+          destinationCoords: dCoords,
+          vehicleType: vType,
+        },
+      });
+      setActiveRide(created);
+      setBookingStep('home');
       await onRefreshState();
     } catch (err) {
       setBookingError((err as Error).message);
@@ -1090,6 +1126,81 @@ export const PassengerApp: React.FC<PassengerAppProps> = ({
               {bookingBusy ? 'Submitting...' : 'Submit Rating & Return Home'}
             </button>
           </form>
+        ) : activeRide && activeRide.status === 'cancelled' && activeRide.cancelledBy === 'captain' ? (
+          /* STAGE: Captain Cancelled Notice (Rapido Style with 1-Click Auto Re-Dispatch) */
+          <div className="space-y-3 flex-1 flex flex-col justify-between" aria-live="polite">
+            <div className="space-y-2.5">
+              {/* Alert Header Banner */}
+              <div className="bg-gradient-to-r from-amber-600 to-red-600 text-white rounded-[24px] p-4 space-y-1 shadow-md">
+                <div className="flex items-center gap-2">
+                  <AlertCircle className="w-5 h-5 text-amber-200 shrink-0" />
+                  <span className="text-xs font-black uppercase tracking-wider text-amber-100">
+                    Trip Cancelled by Captain
+                  </span>
+                </div>
+                <h2 className="text-sm font-extrabold text-white">
+                  Captain had to cancel your request
+                </h2>
+                <p className="text-[11px] text-amber-100/90 leading-tight">
+                  {activeRide.cancelReason || 'Captain encountered heavy traffic or an unforeseen delay.'}
+                </p>
+              </div>
+
+              {/* Assurance & Route Review Card */}
+              <div className="bg-white rounded-[24px] p-3.5 border border-slate-200 space-y-3 shadow-lg">
+                <div className="bg-emerald-50 rounded-2xl p-2.5 flex items-center gap-2 border border-emerald-200">
+                  <ShieldCheck className="w-5 h-5 text-emerald-600 shrink-0" />
+                  <div>
+                    <p className="text-xs font-bold text-emerald-950">
+                      ₹0 Cancellation Fee Applied
+                    </p>
+                    <p className="text-[10px] text-emerald-700">
+                      You are never charged when a captain cancels.
+                    </p>
+                  </div>
+                </div>
+
+                <div className="bg-slate-50 rounded-2xl p-2.5 space-y-1.5 border border-slate-200 text-xs">
+                  <div className="flex items-center gap-2 text-slate-700">
+                    <MapPin className="w-3.5 h-3.5 text-red-600 shrink-0" />
+                    <span className="font-semibold truncate">{activeRide.pickup}</span>
+                  </div>
+                  <div className="flex items-center gap-2 text-slate-700">
+                    <Navigation className="w-3.5 h-3.5 text-red-600 shrink-0" />
+                    <span className="font-semibold truncate">{activeRide.destination}</span>
+                  </div>
+                </div>
+
+                <p className="text-xs text-slate-600 leading-snug">
+                  Would you like us to automatically re-dispatch your trip to the next available top-rated Chennai captain?
+                </p>
+              </div>
+            </div>
+
+            {/* Action Buttons */}
+            <div className="space-y-2">
+              <button
+                type="button"
+                disabled={bookingBusy}
+                onClick={handleRebookNextCaptain}
+                className="w-full min-h-[46px] rounded-full bg-red-600 hover:bg-red-700 text-white font-extrabold text-xs flex items-center justify-center gap-2 shadow-md transition-colors cursor-pointer"
+              >
+                <Zap className="w-4 h-4" />
+                <span>{bookingBusy ? 'Re-dispatching...' : 'Find Another Captain (Auto Re-Dispatch)'}</span>
+              </button>
+
+              <button
+                type="button"
+                onClick={() => {
+                  setActiveRide(null);
+                  setBookingStep('home');
+                }}
+                className="w-full min-h-[40px] rounded-full bg-slate-100 hover:bg-slate-200 text-slate-700 font-bold text-xs transition-colors cursor-pointer"
+              >
+                Back to Map & Change Trip
+              </button>
+            </div>
+          </div>
         ) : activeRide && activeRide.status === 'pending' ? (
           /* STAGE 05 · Rapido-Style Radar Search & Safe Score Matching (Strictly NO OTP until Captain accepts) */
           <div className="space-y-2.5 flex-1 flex flex-col justify-between" aria-live="polite">
@@ -2049,9 +2160,8 @@ export const PassengerApp: React.FC<PassengerAppProps> = ({
 
                 // Auto-bind to matching driver for current tier
                 const activeCandidate =
-                  (selectedCaptainId && tierMatchingDrivers.find((c) => c.captainId === selectedCaptainId)) ||
-                  tierMatchingDrivers[0] ||
                   (selectedCaptainId && allCandidates.find((c) => c.captainId === selectedCaptainId)) ||
+                  tierMatchingDrivers[0] ||
                   allCandidates[0] ||
                   null;
 

@@ -253,7 +253,7 @@ export const CaptainApp: React.FC<CaptainAppProps> = ({
     }
   };
 
-  const handleCancelRideByCaptain = async () => {
+  const handleCancelRideByCaptain = async (reason?: string) => {
     if (!captainActiveRide) return;
     setActionError(null);
     setActionBusy(true);
@@ -263,7 +263,7 @@ export const CaptainApp: React.FC<CaptainAppProps> = ({
         role: 'captain',
         body: {
           rideId: captainActiveRide._id,
-          reason: 'Captain cancelled before pickup',
+          reason: reason || 'Captain encountered heavy traffic delay near pickup point.',
         },
       });
       setCaptainActiveRide(null);
@@ -754,10 +754,10 @@ export const CaptainApp: React.FC<CaptainAppProps> = ({
                       <button
                         type="button"
                         disabled={actionBusy}
-                        onClick={handleCancelRideByCaptain}
+                        onClick={() => handleCancelRideByCaptain('Captain encountered heavy traffic congestion near Panagal Park.')}
                         className="min-h-[42px] rounded-full border border-red-500/40 bg-red-950/60 hover:bg-red-900/70 text-red-200 font-bold text-xs cursor-pointer"
                       >
-                        Cancel
+                        {actionBusy ? 'Cancelling...' : 'Cancel Ride'}
                       </button>
                       <button
                         type="submit"

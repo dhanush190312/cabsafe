@@ -218,8 +218,12 @@ export default function App() {
       refreshAllState();
     });
 
-    socket.on('ride-cancelled', () => {
-      setPassengerRide(null);
+    socket.on('ride-cancelled', (cancelledRide?: RideRecord) => {
+      if (cancelledRide && cancelledRide.cancelledBy === 'captain') {
+        setPassengerRide(cancelledRide);
+      } else {
+        setPassengerRide(null);
+      }
       setCaptainRide(null);
       setCaptainLiveCoords(null);
       setCaptainLastUpdatedAt(null);

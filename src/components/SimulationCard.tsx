@@ -7,6 +7,7 @@ import {
   RotateCcw,
   PlusCircle,
   Scale,
+  X,
 } from 'lucide-react';
 import type { RideRecord, MatchExplanation } from '../types';
 
@@ -101,6 +102,16 @@ export const SimulationCard: React.FC<SimulationCardProps> = ({
         >
           <CheckCircle2 className="w-3.5 h-3.5 shrink-0 text-emerald-600" />
           <span>Sim Finish Ride</span>
+        </button>
+
+        <button
+          type="button"
+          disabled={simBusy || !activeRide || !['pending', 'accepted'].includes(activeRide.status)}
+          onClick={() => onTriggerSimAction('captain-cancel-ride', activeRide?._id)}
+          className="col-span-2 min-h-[38px] px-3 py-1.5 rounded-xl bg-amber-50 hover:bg-amber-100 border border-amber-300 disabled:opacity-40 text-amber-900 font-bold text-xs flex items-center justify-center gap-1.5 transition-colors cursor-pointer disabled:cursor-not-allowed whitespace-nowrap"
+        >
+          <X className="w-3.5 h-3.5 shrink-0 text-amber-700" />
+          <span>Sim Captain Cancel (Test Re-dispatch)</span>
         </button>
       </div>
 

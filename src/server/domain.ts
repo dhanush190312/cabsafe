@@ -535,18 +535,16 @@ export function rankCaptainsExplainably(
       continue;
     }
 
-    // Vehicle compatibility check: exact match = 1.0, car upgrading cng/motorcycle = 0.8, alternative = 0.6
+    // Vehicle compatibility check: exact match = 1.0, car upgrading cng = 0.5, motorcycle/cng cannot fulfill car
     const capType = captain.vehicle.vehicleType;
     let sVehicle = 1.0;
     if (requestedVehicle) {
       if (capType === requestedVehicle) {
         sVehicle = 1.0;
-      } else if (capType === 'car' && (requestedVehicle === 'cng' || requestedVehicle === 'motorcycle')) {
-        sVehicle = 0.8;
-      } else if (capType === 'cng' && requestedVehicle === 'motorcycle') {
-        sVehicle = 0.8;
+      } else if (capType === 'car' && requestedVehicle === 'cng') {
+        sVehicle = 0.5; // Car upgrade for Auto request
       } else {
-        sVehicle = 0.6;
+        sVehicle = 0.0; // Incompatible tier (e.g. motorcycle cannot fulfill Car or Auto)
       }
     }
 
@@ -627,7 +625,15 @@ export function rankCaptainsExplainably(
     });
   }
 
-  return ranked.sort((a, b) => b.finalScore - a.finalScore);
+  return ranked.sort((a, b) => {
+    // If a specific vehicle tier was requested, exact matches always come first
+    if (requestedVehicle) {
+      const aExact = a.vehicleType === requestedVehicle ? 1 : 0;
+      const bExact = b.vehicleType === requestedVehicle ? 1 : 0;
+      if (aExact !== bExact) return bExact - aExact;
+    }
+    return b.finalScore - a.finalScore;
+  });
 }
 
 /**
