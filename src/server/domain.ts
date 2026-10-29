@@ -130,6 +130,7 @@ export interface RideRecord {
   userFeedback?: string;
   cancelledBy?: 'user' | 'captain' | null;
   cancelReason?: string;
+  preferredCaptainId?: string;
   matchExplanation?: MatchExplanation | null;
   candidateRankings?: MatchExplanation[];
   dataSource: 'live_osm' | 'fallback_geodata';

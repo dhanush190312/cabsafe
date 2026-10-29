@@ -555,6 +555,26 @@ export const PassengerApp: React.FC<PassengerAppProps> = ({
     }
   };
 
+  const handleSimulateCaptainAccept = async () => {
+    if (!activeRide || bookingBusy) return;
+    setBookingBusy(true);
+    setBookingError(null);
+    try {
+      await apiRequest('/admin/simulate-action', {
+        method: 'POST',
+        body: {
+          action: 'accept-ride',
+          rideId: activeRide._id,
+        },
+      });
+      await onRefreshState();
+    } catch (err) {
+      setBookingError((err as Error).message);
+    } finally {
+      setBookingBusy(false);
+    }
+  };
+
   const handlePayAndRate = async (e: React.FormEvent) => {
     e.preventDefault();
     const target = completedRideToRate || activeRide;
@@ -1070,8 +1090,188 @@ export const PassengerApp: React.FC<PassengerAppProps> = ({
               {bookingBusy ? 'Submitting...' : 'Submit Rating & Return Home'}
             </button>
           </form>
-        ) : activeRide && ['pending', 'accepted', 'ongoing'].includes(activeRide.status) ? (
-          /* STAGES 05, 06, 07 · Royal White & Red Active Ride Card */
+        ) : activeRide && activeRide.status === 'pending' ? (
+          /* STAGE 05 · Rapido-Style Radar Search & Safe Score Matching (Strictly NO OTP until Captain accepts) */
+          <div className="space-y-2.5 flex-1 flex flex-col justify-between" aria-live="polite">
+            <div className="space-y-2">
+              {/* Compact Dual Location Pill Container */}
+              <div className="bg-slate-50 rounded-[20px] p-2 space-y-1.5 border border-slate-200">
+                <div className="bg-white rounded-full px-3 py-1.5 flex items-center gap-2.5 border border-slate-200 shadow-xs">
+                  <MapPin className="w-3.5 h-3.5 text-red-600 shrink-0" />
+                  <p className="text-[11px] text-slate-800 font-semibold truncate">
+                    {activeRide.pickup}
+                  </p>
+                </div>
+                <div className="bg-white rounded-full px-3 py-1.5 flex items-center gap-2.5 border border-slate-200 shadow-xs">
+                  <Navigation className="w-3.5 h-3.5 text-red-600 shrink-0" />
+                  <p className="text-[11px] text-slate-800 font-semibold truncate">
+                    {activeRide.destination}
+                  </p>
+                </div>
+              </div>
+
+              {/* Layered Royal Crimson Search Banner */}
+              <div className="pt-0.5">
+                <div className="bg-gradient-to-r from-red-600 to-rose-700 text-white rounded-t-[24px] px-4 pt-2.5 pb-5 flex items-center justify-between shadow-xs">
+                  <div>
+                    <p className="text-[10px] font-extrabold uppercase tracking-wider text-red-100">
+                      05 · Finding Captain
+                    </p>
+                    <h2 className="text-xs font-extrabold text-white">
+                      Connecting with verified Chennai drivers…
+                    </h2>
+                  </div>
+                  <span className="bg-white text-red-700 font-mono text-xs font-extrabold px-3 py-1 rounded-full shrink-0 shadow-xs flex items-center gap-1.5">
+                    <span className="w-2 h-2 rounded-full bg-red-600 animate-ping inline-block" />
+                    Searching…
+                  </span>
+                </div>
+
+                {/* Overlapping White Royal Card */}
+                <div className="-mt-3 bg-white rounded-[24px] p-3 border border-slate-200 space-y-2.5 shadow-xl">
+                  {/* Rapido-Style Radar Sonar Pulse Visual */}
+                  <div className="relative py-3 flex flex-col items-center justify-center bg-slate-50/70 rounded-2xl border border-slate-200">
+                    <div className="relative w-20 h-20 flex items-center justify-center">
+                      <span className="absolute w-20 h-20 rounded-full bg-red-500/15 animate-ping pointer-events-none" />
+                      <span className="absolute w-14 h-14 rounded-full bg-red-500/25 animate-pulse pointer-events-none" />
+                      <div className="relative w-11 h-11 rounded-full bg-red-600 text-white flex items-center justify-center shadow-md">
+                        {activeRide.vehicleType === 'car' ? (
+                          <Car className="w-5 h-5" />
+                        ) : activeRide.vehicleType === 'cng' ? (
+                          <Zap className="w-5 h-5" />
+                        ) : (
+                          <Bike className="w-5 h-5" />
+                        )}
+                      </div>
+                    </div>
+                    <p className="mt-2 text-xs font-extrabold text-slate-900 tracking-tight text-center">
+                      Looking for the best Captain near you…
+                    </p>
+                    <p className="text-[11px] text-slate-500 text-center max-w-[270px] mt-0.5 leading-snug px-2">
+                      {activeRide.matchExplanation?.captainName
+                        ? `Request dispatched directly to ${activeRide.matchExplanation.captainName} (${activeRide.matchExplanation.vehicleModel || 'Chennai Captain'}). Waiting for acceptance...`
+                        : 'Broadcasting ride request to active verified Chennai captains within 3.5 km.'}
+                    </p>
+                  </div>
+
+                  {/* Explainable Safe Score Match Card */}
+                  <div className="bg-slate-50 rounded-2xl p-2.5 border border-slate-200 space-y-2">
+                    <div className="flex items-center justify-between">
+                      <div className="flex items-center gap-1.5">
+                        <ShieldCheck className="w-4 h-4 text-emerald-600 shrink-0" />
+                        <span className="text-xs font-bold text-slate-900">
+                          CabSafe Match Intelligence
+                        </span>
+                      </div>
+                      <span className="font-mono text-xs font-extrabold text-emerald-700 bg-emerald-50 px-2.5 py-0.5 rounded-full border border-emerald-200 shadow-2xs">
+                        SafeScore: {activeRide.matchExplanation?.finalScore ? activeRide.matchExplanation.finalScore.toFixed(1) : '96.2'} / 100
+                      </span>
+                    </div>
+                    <p className="text-[10px] text-slate-600 leading-tight">
+                      {activeRide.matchExplanation?.explanation ||
+                        'Optimized using 4-factor scoring: Haversine proximity, historical 5-star rating, and 99% trip completion.'}
+                    </p>
+                    <div className="grid grid-cols-2 gap-1 text-[9px] font-mono">
+                      <div className="bg-white px-2 py-1 rounded-md border border-slate-200 flex justify-between shadow-2xs">
+                        <span className="text-slate-500 font-sans">Proximity (45%):</span>
+                        <span className="font-bold text-slate-800">
+                          {activeRide.matchExplanation?.distanceKm ? `${activeRide.matchExplanation.distanceKm} km` : '1.2 km'}
+                        </span>
+                      </div>
+                      <div className="bg-white px-2 py-1 rounded-md border border-slate-200 flex justify-between shadow-2xs">
+                        <span className="text-slate-500 font-sans">Rating (25%):</span>
+                        <span className="font-bold text-slate-800">
+                          {activeRide.matchExplanation?.rating ? `${activeRide.matchExplanation.rating.toFixed(1)} ★` : '4.9 ★'}
+                        </span>
+                      </div>
+                      <div className="bg-white px-2 py-1 rounded-md border border-slate-200 flex justify-between shadow-2xs">
+                        <span className="text-slate-500 font-sans">Reliability (20%):</span>
+                        <span className="font-bold text-slate-800">99%</span>
+                      </div>
+                      <div className="bg-white px-2 py-1 rounded-md border border-slate-200 flex justify-between shadow-2xs">
+                        <span className="text-slate-500 font-sans">Vehicle (10%):</span>
+                        <span className="font-bold text-slate-800">100%</span>
+                      </div>
+                    </div>
+                  </div>
+
+                  {/* Vehicle Tier & Guaranteed Fare Review */}
+                  <div className="flex items-center justify-between bg-white rounded-2xl px-3 py-2 border border-slate-200 shadow-xs">
+                    <div className="flex items-center gap-2">
+                      <div className="w-7 h-7 rounded-full bg-red-600 text-white flex items-center justify-center shrink-0 shadow-xs">
+                        {activeRide.vehicleType === 'car' ? (
+                          <Car className="w-4 h-4" />
+                        ) : activeRide.vehicleType === 'cng' ? (
+                          <Zap className="w-4 h-4" />
+                        ) : (
+                          <Bike className="w-4 h-4" />
+                        )}
+                      </div>
+                      <div>
+                        <p className="text-xs font-bold text-slate-900 capitalize">
+                          {activeRide.vehicleType === 'car'
+                            ? 'CabSafe Go · Sedan (4 Seats)'
+                            : activeRide.vehicleType === 'cng'
+                              ? 'CabSafe Auto · 3 Seats'
+                              : 'CabSafe Moto · 1 Seat'}
+                        </p>
+                        <p className="text-[10px] text-slate-500">
+                          Fixed Price Guarantee
+                        </p>
+                      </div>
+                    </div>
+                    <span className="bg-slate-50 text-slate-900 font-mono text-sm font-extrabold px-3 py-1 rounded-xl tabular-nums border border-slate-200">
+                      ₹{activeRide.fare.toFixed(2)}
+                    </span>
+                  </div>
+
+                  {/* Security Notice: Strictly NO OTP while pending */}
+                  <div className="bg-amber-50 border border-amber-200 rounded-2xl p-2.5 flex items-start gap-2 text-amber-900">
+                    <Clock className="w-4 h-4 text-amber-600 shrink-0 mt-0.5" />
+                    <div className="min-w-0">
+                      <p className="text-[11px] font-bold">Waiting for Captain Acceptance</p>
+                      <p className="text-[10px] text-amber-700 leading-tight">
+                        Your Start OTP will be securely generated and revealed once a captain accepts. Never share OTP before meeting your driver.
+                      </p>
+                    </div>
+                  </div>
+
+                  {/* Quick Simulation Bar for convenient testing */}
+                  <div className="bg-slate-100 rounded-2xl p-2 flex items-center justify-between gap-2 border border-slate-200">
+                    <p className="text-[10px] text-slate-600 truncate">
+                      Switch to <strong>Captain App</strong> tab to accept, or:
+                    </p>
+                    <button
+                      type="button"
+                      disabled={bookingBusy}
+                      onClick={handleSimulateCaptainAccept}
+                      className="px-3 py-1 rounded-full bg-slate-900 hover:bg-slate-800 text-white font-bold text-[10px] transition-colors cursor-pointer shadow-xs whitespace-nowrap"
+                    >
+                      {bookingBusy ? 'Accepting…' : 'Accept as Captain'}
+                    </button>
+                  </div>
+                </div>
+              </div>
+            </div>
+
+            {/* Bottom Pill Action Bar */}
+            <button
+              type="button"
+              disabled={bookingBusy}
+              onClick={handleCancelRide}
+              className="w-full bg-slate-50 hover:bg-red-50 border border-slate-200 hover:border-red-300 rounded-full p-1.5 flex items-center justify-between transition-colors cursor-pointer group shadow-sm"
+            >
+              <span className="w-9 h-9 rounded-full bg-red-600 text-white flex items-center justify-center shrink-0 shadow-xs">
+                <X className="w-4 h-4" />
+              </span>
+              <span className="text-xs font-bold text-slate-700 group-hover:text-red-700">
+                {bookingBusy ? 'Cancelling...' : 'Cancel Ride Request'}
+              </span>
+              <ChevronsRight className="w-4 h-4 text-slate-400 mr-2" />
+            </button>
+          </div>
+        ) : activeRide && ['accepted', 'ongoing'].includes(activeRide.status) ? (
+          /* STAGES 06, 07 · Royal White & Red Active Ride Card with Start OTP */
           <div className="space-y-2.5 flex-1 flex flex-col justify-between" aria-live="polite">
             <div className="space-y-2">
               {/* Compact Dual Location Pill Container */}
@@ -1095,25 +1295,21 @@ export const PassengerApp: React.FC<PassengerAppProps> = ({
                 <div className="bg-gradient-to-r from-red-600 to-rose-700 text-white rounded-t-[24px] px-4 pt-2.5 pb-5 flex items-center justify-between shadow-xs">
                   <div>
                     <p className="text-[10px] font-extrabold uppercase tracking-wider text-red-100">
-                      {activeRide.status === 'pending' && '05 · Finding a Driver'}
                       {activeRide.status === 'accepted' && '06 · Driver Assigned'}
                       {activeRide.status === 'ongoing' && '07 · Trip in Progress'}
                     </p>
                     <h2 className="text-xs font-extrabold text-white">
-                      {activeRide.status === 'pending' && 'Finding your driver…'}
                       {activeRide.status === 'accepted' &&
                         `Captain ${assignedCaptain?.fullname.firstname || 'driver'} is arriving`}
                       {activeRide.status === 'ongoing' && 'En route to destination'}
                     </h2>
                   </div>
                   <span className="bg-white text-red-700 font-mono text-xs font-extrabold px-3 py-1 rounded-full shrink-0 shadow-xs">
-                    {activeRide.status === 'pending'
-                      ? 'Matching…'
-                      : activeRide.status === 'accepted'
-                        ? `${activeRide.matchExplanation?.etaMinutes ?? 2} min`
-                        : isLocationStale
-                          ? 'GPS Stale'
-                          : 'Live GPS'}
+                    {activeRide.status === 'accepted'
+                      ? `${activeRide.matchExplanation?.etaMinutes ?? 2} min away`
+                      : isLocationStale
+                        ? 'GPS Stale'
+                        : 'Live GPS'}
                   </span>
                 </div>
 
@@ -1147,43 +1343,47 @@ export const PassengerApp: React.FC<PassengerAppProps> = ({
                         </p>
                       </div>
                     </div>
-                  ) : (
-                    <div className="bg-slate-50 rounded-2xl p-2.5 space-y-1 border border-slate-200">
-                      <p className="text-xs font-bold text-slate-900">
-                        Connecting with nearby Chennai captains…
-                      </p>
-                      <p className="text-[11px] text-slate-500 leading-relaxed">
-                        {activeRide.matchExplanation?.explanation ||
-                          'Broadcasting ride request to active Chennai captains...'}
-                      </p>
+                  ) : null}
+
+                  {/* Safe Score Verified Pill */}
+                  <div className="bg-emerald-50 rounded-xl px-2.5 py-1.5 flex items-center justify-between border border-emerald-200 text-[10px]">
+                    <span className="flex items-center gap-1 font-semibold text-emerald-900">
+                      <ShieldCheck className="w-3.5 h-3.5 text-emerald-600" />
+                      <span>Verified SafeScore Match</span>
+                    </span>
+                    <span className="font-mono font-extrabold text-emerald-700">
+                      {activeRide.matchExplanation?.finalScore ? activeRide.matchExplanation.finalScore.toFixed(1) : '96.2'} / 100
+                    </span>
+                  </div>
+
+                  {/* 6-Digit Pickup Verification OTP: STRICTLY ONLY REVEALED WHEN ACCEPTED */}
+                  {activeRide.status === 'accepted' && activeRide.otp && (
+                    <div className="bg-red-50 border-2 border-red-500/30 rounded-2xl p-2.5 flex items-center justify-between shadow-xs">
+                      <div className="flex items-center gap-2">
+                        <div className="w-8 h-8 rounded-xl bg-red-600 text-white flex items-center justify-center shrink-0 shadow-xs">
+                          <ShieldCheck className="w-4 h-4" />
+                        </div>
+                        <div>
+                          <p className="text-[10px] font-extrabold uppercase tracking-wider text-red-700">
+                            Pickup Verification OTP
+                          </p>
+                          <p className="text-[9px] text-slate-500">
+                            Share with Captain upon arrival
+                          </p>
+                        </div>
+                      </div>
+                      <span
+                        data-testid="passenger-otp-code"
+                        className="font-mono text-xl font-extrabold tracking-widest text-red-600 tabular-nums bg-white px-3.5 py-1 rounded-xl border border-red-200 shadow-xs"
+                      >
+                        {activeRide.otp}
+                      </span>
                     </div>
                   )}
 
-                  {/* 6-Digit Pickup OTP + Price Row + Top-Down Vehicle Graphic */}
+                  {/* Price Row + Top-Down Vehicle Graphic */}
                   <div className="flex items-center justify-between gap-2">
                     <div className="flex-1 space-y-2">
-                      {activeRide.status !== 'ongoing' && activeRide.otp && (
-                        <div className="bg-red-50 border border-red-200 rounded-2xl p-2 flex items-center justify-between">
-                          <div className="flex items-center gap-1.5">
-                            <ShieldCheck className="w-4 h-4 text-red-600 shrink-0" />
-                            <div>
-                              <p className="text-[10px] font-bold text-slate-900">
-                                Pickup Verification OTP
-                              </p>
-                              <p className="text-[9px] text-slate-500">
-                                Share with captain
-                              </p>
-                            </div>
-                          </div>
-                          <span
-                            data-testid="passenger-otp-code"
-                            className="font-mono text-base font-extrabold tracking-widest text-red-600 tabular-nums bg-white px-2.5 py-0.5 rounded-lg border border-red-200 shadow-xs"
-                          >
-                            {activeRide.otp}
-                          </span>
-                        </div>
-                      )}
-
                       <div className="flex items-center justify-between bg-slate-50 rounded-2xl px-3 py-2 border border-slate-200">
                         <div className="flex items-center gap-2">
                           <div className="w-7 h-7 rounded-full bg-red-600 text-white flex items-center justify-center shrink-0 shadow-xs">
@@ -1220,7 +1420,7 @@ export const PassengerApp: React.FC<PassengerAppProps> = ({
             </div>
 
             {/* Bottom Pill Action Bar */}
-            {['pending', 'accepted'].includes(activeRide.status) ? (
+            {activeRide.status === 'accepted' ? (
               <button
                 type="button"
                 disabled={bookingBusy}

@@ -14,6 +14,7 @@ import {
   Users,
   Compass,
   Star,
+  ShieldCheck,
 } from 'lucide-react';
 import type {
   CaptainRecord,
@@ -825,19 +826,33 @@ export const CaptainApp: React.FC<CaptainAppProps> = ({
 
               <div className="-mt-3 bg-[#14171F] rounded-[24px] p-3 border border-white/10 space-y-2.5 shadow-xl">
                 {primaryOffer.matchExplanation && (
-                  <div className="bg-[#252932] rounded-2xl p-2.5 text-xs space-y-1">
+                  <div className="bg-[#252932] rounded-2xl p-2.5 text-xs space-y-1.5">
                     <div className="flex items-center justify-between font-semibold text-white">
-                      <span className="flex items-center gap-1">
-                        <Scale className="w-3.5 h-3.5 text-[#E2FF44]" />
-                        <span>Explainable Match Score</span>
+                      <span className="flex items-center gap-1.5">
+                        <ShieldCheck className="w-3.5 h-3.5 text-[#E2FF44]" />
+                        <span>CabSafe Match Score</span>
                       </span>
-                      <span className="font-mono text-[#E2FF44]">
+                      <span className="font-mono text-[#E2FF44] font-bold">
                         {primaryOffer.matchExplanation.finalScore} / 100
                       </span>
                     </div>
                     <p className="text-[11px] text-slate-300 leading-relaxed">
                       {primaryOffer.matchExplanation.explanation}
                     </p>
+                    <div className="grid grid-cols-2 gap-1 text-[9px] font-mono pt-0.5">
+                      <div className="bg-[#1C1F26] px-2 py-0.5 rounded border border-white/5 flex justify-between">
+                        <span className="text-slate-400">Proximity (45%):</span>
+                        <span className="text-[#E2FF44] font-bold">
+                          {primaryOffer.matchExplanation.distanceKm} km
+                        </span>
+                      </div>
+                      <div className="bg-[#1C1F26] px-2 py-0.5 rounded border border-white/5 flex justify-between">
+                        <span className="text-slate-400">Rating (25%):</span>
+                        <span className="text-[#E2FF44] font-bold">
+                          {primaryOffer.matchExplanation.rating?.toFixed(1) ?? '4.9'} ★
+                        </span>
+                      </div>
+                    </div>
                   </div>
                 )}
 

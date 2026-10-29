@@ -1140,6 +1140,7 @@ async function startServer() {
       if (action === 'accept-ride') {
         const chosenCaptainId =
           captainId ||
+          targetRide.preferredCaptainId ||
           targetRide.matchExplanation?.captainId ||
           repo.listCaptains().find((c) => c.status === 'active')?._id ||
           '671b00000000000000000101';

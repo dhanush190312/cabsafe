@@ -723,6 +723,7 @@ export class CabSafeRepository {
       paymentMethod: 'Card',
       matchExplanation: rankings[0] || null,
       candidateRankings: rankings,
+      preferredCaptainId: params.preferredCaptainId,
       dataSource: params.dataSource,
       createdAt: new Date().toISOString(),
     };
