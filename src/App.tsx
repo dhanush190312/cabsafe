@@ -7,6 +7,7 @@ import type {
   WorkspaceTab,
   FareEstimateResponse,
   Coordinates,
+  MatchExplanation,
 } from './types';
 import {
   apiRequest,
@@ -46,6 +47,7 @@ export default function App() {
   const [captainRide, setCaptainRide] = useState<RideRecord | null>(null);
   const [pendingOffers, setPendingOffers] = useState<RideRecord[]>([]);
   const [farePreview, setFarePreview] = useState<FareEstimateResponse | null>(null);
+  const [selectedCandidatePreview, setSelectedCandidatePreview] = useState<MatchExplanation | null>(null);
   const [captainLiveCoords, setCaptainLiveCoords] = useState<Coordinates | null>(null);
   const [captainLastUpdatedAt, setCaptainLastUpdatedAt] = useState<string | null>(null);
   const [overview, setOverview] = useState<AdminOverviewData | null>(null);
@@ -394,6 +396,7 @@ export default function App() {
                 <SimulationCard
                   activeRide={currentSharedRide}
                   candidateRankings={farePreview?.candidateRankings}
+                  selectedCandidate={selectedCandidatePreview}
                   onTriggerSimAction={handleTriggerSimAction}
                   simBusy={simBusy}
                   simStatusMessage={simStatusMessage}
@@ -410,6 +413,7 @@ export default function App() {
               captainLiveCoords={captainLiveCoords}
               captainLastUpdatedAt={captainLastUpdatedAt}
               onFarePreviewChange={setFarePreview}
+              onSelectedCandidateChange={setSelectedCandidatePreview}
               onRefreshState={refreshAllState}
             />
           </MobileFrame>
@@ -422,6 +426,7 @@ export default function App() {
                 <SimulationCard
                   activeRide={currentSharedRide}
                   candidateRankings={farePreview?.candidateRankings}
+                  selectedCandidate={selectedCandidatePreview}
                   onTriggerSimAction={handleTriggerSimAction}
                   simBusy={simBusy}
                   simStatusMessage={simStatusMessage}

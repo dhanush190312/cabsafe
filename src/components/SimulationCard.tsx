@@ -14,6 +14,7 @@ import type { RideRecord, MatchExplanation } from '../types';
 interface SimulationCardProps {
   activeRide: RideRecord | null;
   candidateRankings?: MatchExplanation[];
+  selectedCandidate?: MatchExplanation | null;
   onTriggerSimAction: (action: string, rideId?: string) => Promise<void>;
   simBusy: boolean;
   simStatusMessage: string | null;
@@ -22,6 +23,7 @@ interface SimulationCardProps {
 export const SimulationCard: React.FC<SimulationCardProps> = ({
   activeRide,
   candidateRankings = [],
+  selectedCandidate = null,
   onTriggerSimAction,
   simBusy,
   simStatusMessage,
@@ -29,6 +31,7 @@ export const SimulationCard: React.FC<SimulationCardProps> = ({
   const explanation =
     activeRide?.matchExplanation ||
     activeRide?.candidateRankings?.[0] ||
+    selectedCandidate ||
     candidateRankings[0] ||
     null;
 

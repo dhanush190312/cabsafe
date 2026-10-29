@@ -798,55 +798,148 @@ export const CaptainApp: React.FC<CaptainAppProps> = ({
             </div>
           </div>
         ) : primaryOffer ? (
-          /* STAGE 02 · Incoming Ride Request Card (Reference Screen 2 Layered Chartreuse Banner) */
+          /* STAGE 02 · Incoming Ride Request Card (Clean Driver Cockpit with Passenger Details & Visual Route) */
           <div className="space-y-2.5 flex-1 flex flex-col justify-between">
             <div className="space-y-2">
-              <div className="bg-[#E2FF44] text-[#0B0D12] rounded-t-[24px] px-4 pt-2.5 pb-5 flex items-center justify-between">
-                <div>
-                  <span className="text-[10px] font-extrabold uppercase tracking-wider opacity-80">
-                    02 · Incoming Ride Request
-                  </span>
-                  <h2 className="text-sm font-extrabold">
-                    {typeof primaryOffer.user === 'object'
-                      ? `${primaryOffer.user.fullname.firstname} ${
-                          primaryOffer.user.fullname.lastname || ''
-                        }`
-                      : 'Chennai Passenger'}
-                  </h2>
+              {/* Header Banner */}
+              <div className="bg-[#E2FF44] text-[#0B0D12] rounded-t-[24px] px-4 pt-3 pb-5 flex items-center justify-between shadow-xs">
+                <div className="flex items-center gap-2">
+                  <span className="w-2.5 h-2.5 rounded-full bg-red-600 animate-ping inline-block" />
+                  <div>
+                    <span className="text-[10px] font-black uppercase tracking-wider text-[#0B0D12]/80 block">
+                      Incoming Ride Offer
+                    </span>
+                    <span className="text-xs font-bold text-[#0B0D12]">
+                      {primaryOffer.vehicleType === 'car'
+                        ? 'CabSafe Go · Sedan'
+                        : primaryOffer.vehicleType === 'cng'
+                          ? 'CabSafe Auto · 3-Seat'
+                          : 'CabSafe Moto · 1-Seat'}
+                    </span>
+                  </div>
                 </div>
-                <div className="text-right font-mono">
-                  <span className="text-base font-extrabold bg-[#0B0D12] text-[#E2FF44] px-3 py-1 rounded-full tabular-nums">
+                <div className="text-right">
+                  <span className="text-lg font-black font-mono bg-[#0B0D12] text-[#E2FF44] px-3.5 py-1 rounded-full tabular-nums shadow-xs">
                     ₹{primaryOffer.fare.toFixed(2)}
                   </span>
-                  <p className="text-[10px] font-bold mt-0.5">
-                    {(primaryOffer.distance / 1000).toFixed(2)} km
+                  <p className="text-[10px] font-bold text-[#0B0D12] mt-0.5">
+                    Guaranteed Earning
                   </p>
                 </div>
               </div>
 
+              {/* Overlapping Dark Titanium Console Card */}
               <div className="-mt-3 bg-[#14171F] rounded-[24px] p-3 border border-white/10 space-y-2.5 shadow-xl">
+                {/* Clean Passenger Details Card */}
+                {(() => {
+                  const passengerName =
+                    typeof primaryOffer.user === 'object'
+                      ? `${primaryOffer.user.fullname.firstname} ${
+                          primaryOffer.user.fullname.lastname || ''
+                        }`.trim()
+                      : 'Alex Rivera';
+                  const passengerInitials =
+                    typeof primaryOffer.user === 'object'
+                      ? `${primaryOffer.user.fullname.firstname[0] || 'A'}${
+                          primaryOffer.user.fullname.lastname?.[0] || 'R'
+                        }`
+                      : 'AR';
+                  const passengerPhone =
+                    typeof primaryOffer.user === 'object' && primaryOffer.user.phone
+                      ? primaryOffer.user.phone
+                      : '+91 98402 11980';
+
+                  return (
+                    <div className="bg-[#1C2029] rounded-2xl p-2.5 border border-white/10 flex items-center justify-between gap-2.5 shadow-sm">
+                      <div className="flex items-center gap-2.5 min-w-0">
+                        <div className="w-10 h-10 rounded-full bg-gradient-to-tr from-amber-400 to-red-500 text-[#0B0D12] font-black text-xs flex items-center justify-center shrink-0 shadow-md ring-2 ring-white/10">
+                          {passengerInitials}
+                        </div>
+                        <div className="min-w-0">
+                          <div className="flex items-center gap-1.5">
+                            <h3 className="text-xs font-extrabold text-white truncate">
+                              {passengerName}
+                            </h3>
+                            <span className="text-[9px] bg-emerald-500/20 text-emerald-400 font-bold px-1.5 py-0.2 rounded border border-emerald-500/30 shrink-0">
+                              Verified
+                            </span>
+                          </div>
+                          <div className="flex items-center gap-1.5 text-[10px] text-slate-300 mt-0.5 flex-wrap">
+                            <span className="text-amber-400 font-bold flex items-center gap-0.5">
+                              ★ 4.9
+                            </span>
+                            <span className="text-slate-500">·</span>
+                            <span className="text-slate-300">Pre-Paid Online</span>
+                            <span className="text-slate-500">·</span>
+                            <span className="font-mono text-slate-400">{passengerPhone}</span>
+                          </div>
+                        </div>
+                      </div>
+
+                      <div className="text-right shrink-0">
+                        <span className="text-[9px] font-bold text-slate-400 uppercase tracking-wider block">
+                          Distance
+                        </span>
+                        <span className="font-mono text-xs font-extrabold text-[#E2FF44]">
+                          {(primaryOffer.distance / 1000).toFixed(1)} km
+                        </span>
+                      </div>
+                    </div>
+                  );
+                })()}
+
+                {/* Visual Route Timeline */}
+                <div className="bg-[#0D0F14] rounded-2xl p-2.5 space-y-1.5 border border-white/5 text-xs">
+                  <div className="flex items-start gap-2.5">
+                    <div className="flex flex-col items-center pt-1 shrink-0">
+                      <div className="w-2.5 h-2.5 rounded-full bg-[#E2FF44] shadow-xs" />
+                      <div className="w-0.5 h-5 bg-white/20 my-0.5" />
+                      <div className="w-2.5 h-2.5 rounded-full bg-red-500 shadow-xs" />
+                    </div>
+                    <div className="flex-1 space-y-1.5 min-w-0">
+                      <div>
+                        <span className="text-[9px] uppercase tracking-wider font-extrabold text-slate-400 block">
+                          Pick-up Location
+                        </span>
+                        <p className="text-xs font-bold text-white truncate">
+                          {primaryOffer.pickup}
+                        </p>
+                      </div>
+                      <div>
+                        <span className="text-[9px] uppercase tracking-wider font-extrabold text-slate-400 block">
+                          Drop-off Destination
+                        </span>
+                        <p className="text-xs font-bold text-white truncate">
+                          {primaryOffer.destination}
+                        </p>
+                      </div>
+                    </div>
+                  </div>
+                </div>
+
+                {/* Match Score Intelligence Breakdown */}
                 {primaryOffer.matchExplanation && (
-                  <div className="bg-[#252932] rounded-2xl p-2.5 text-xs space-y-1.5">
+                  <div className="bg-[#1C2029] rounded-2xl p-2.5 text-xs space-y-1.5 border border-white/10">
                     <div className="flex items-center justify-between font-semibold text-white">
                       <span className="flex items-center gap-1.5">
                         <ShieldCheck className="w-3.5 h-3.5 text-[#E2FF44]" />
-                        <span>CabSafe Match Score</span>
+                        <span className="font-bold">CabSafe Match Score</span>
                       </span>
-                      <span className="font-mono text-[#E2FF44] font-bold">
+                      <span className="font-mono text-[#E2FF44] font-extrabold">
                         {primaryOffer.matchExplanation.finalScore} / 100
                       </span>
                     </div>
-                    <p className="text-[11px] text-slate-300 leading-relaxed">
+                    <p className="text-[10px] text-slate-300 leading-snug">
                       {primaryOffer.matchExplanation.explanation}
                     </p>
                     <div className="grid grid-cols-2 gap-1 text-[9px] font-mono pt-0.5">
-                      <div className="bg-[#1C1F26] px-2 py-0.5 rounded border border-white/5 flex justify-between">
+                      <div className="bg-[#0D0F14] px-2 py-0.5 rounded border border-white/5 flex justify-between">
                         <span className="text-slate-400">Proximity (45%):</span>
                         <span className="text-[#E2FF44] font-bold">
                           {primaryOffer.matchExplanation.distanceKm} km
                         </span>
                       </div>
-                      <div className="bg-[#1C1F26] px-2 py-0.5 rounded border border-white/5 flex justify-between">
+                      <div className="bg-[#0D0F14] px-2 py-0.5 rounded border border-white/5 flex justify-between">
                         <span className="text-slate-400">Rating (25%):</span>
                         <span className="text-[#E2FF44] font-bold">
                           {primaryOffer.matchExplanation.rating?.toFixed(1) ?? '4.9'} ★
@@ -855,15 +948,6 @@ export const CaptainApp: React.FC<CaptainAppProps> = ({
                     </div>
                   </div>
                 )}
-
-                <div className="bg-[#0D0F14] rounded-2xl p-2.5 space-y-1 text-xs border border-white/5">
-                  <p className="text-slate-200 truncate">
-                    <strong className="text-[#E2FF44]">Pickup:</strong> {primaryOffer.pickup}
-                  </p>
-                  <p className="text-slate-200 truncate">
-                    <strong className="text-[#E2FF44]">Dropoff:</strong> {primaryOffer.destination}
-                  </p>
-                </div>
               </div>
             </div>
 
@@ -872,7 +956,7 @@ export const CaptainApp: React.FC<CaptainAppProps> = ({
                 type="button"
                 disabled={actionBusy}
                 onClick={() => handleDismissOffer(primaryOffer._id)}
-                className="min-h-[44px] rounded-full border border-white/15 bg-[#1C1F26] hover:bg-[#252932] text-slate-200 font-bold text-xs transition-colors cursor-pointer"
+                className="min-h-[44px] rounded-full border border-white/15 bg-[#1C1F26] hover:bg-[#252932] text-slate-300 font-bold text-xs transition-colors cursor-pointer"
               >
                 Dismiss
               </button>
@@ -880,9 +964,10 @@ export const CaptainApp: React.FC<CaptainAppProps> = ({
                 type="button"
                 disabled={actionBusy}
                 onClick={() => handleAcceptRide(primaryOffer._id)}
-                className="col-span-2 min-h-[44px] rounded-full bg-[#E2FF44] hover:bg-[#d4f235] text-[#0B0D12] font-extrabold text-sm transition-colors cursor-pointer"
+                className="col-span-2 min-h-[44px] rounded-full bg-[#E2FF44] hover:bg-[#d4f235] text-[#0B0D12] font-black text-sm flex items-center justify-center gap-1.5 transition-colors cursor-pointer shadow-md"
               >
-                {actionBusy ? 'Accepting...' : 'Accept Ride'}
+                <Check className="w-4 h-4 stroke-[3]" />
+                <span>{actionBusy ? 'Accepting…' : 'Accept Ride'}</span>
               </button>
             </div>
           </div>

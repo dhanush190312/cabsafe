@@ -32,6 +32,7 @@ import type {
   FareEstimateResponse,
   VehicleType,
   Coordinates,
+  MatchExplanation,
 } from '../types';
 import {
   apiRequest,
@@ -52,6 +53,7 @@ interface PassengerAppProps {
   captainLiveCoords: Coordinates | null;
   captainLastUpdatedAt?: string | null;
   onFarePreviewChange?: (fareData: FareEstimateResponse | null) => void;
+  onSelectedCandidateChange?: (cand: MatchExplanation | null) => void;
   onRefreshState: () => Promise<void>;
 }
 
@@ -76,6 +78,7 @@ export const PassengerApp: React.FC<PassengerAppProps> = ({
   captainLiveCoords,
   captainLastUpdatedAt,
   onFarePreviewChange,
+  onSelectedCandidateChange,
   onRefreshState,
 }) => {
   // Auth state
@@ -104,6 +107,18 @@ export const PassengerApp: React.FC<PassengerAppProps> = ({
   const [bookingBusy, setBookingBusy] = useState(false);
   const [bookingError, setBookingError] = useState<string | null>(null);
   const [gpsStatusNotice, setGpsStatusNotice] = useState<string | null>(null);
+
+  const allCandidates = fareEstimate?.candidateRankings || [];
+  const tierMatchingDrivers = allCandidates.filter((c) => c.vehicleType === selectedVehicle);
+  const activeCandidate =
+    (selectedCaptainId && allCandidates.find((c) => c.captainId === selectedCaptainId)) ||
+    tierMatchingDrivers[0] ||
+    allCandidates[0] ||
+    null;
+
+  useEffect(() => {
+    onSelectedCandidateChange?.(activeCandidate);
+  }, [activeCandidate, onSelectedCandidateChange]);
 
   // Drawers & Post-Ride Modals
   const [drawer, setDrawer] = useState<'none' | 'history' | 'profile'>('none');
