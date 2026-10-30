@@ -11,9 +11,9 @@
 1. **Active AWS Account:** With administrative permissions for CloudFormation, EC2, VPC, IAM, and DynamoDB.
 2. **Local Template File Location:**
    ```text
-   D:\Dhanush Project Files\cabsafe-chennai-main\infra\cloudformation\cabsafe-aws-stack.yaml
+   C:\cab project\cabsafe-chennai-main\cabsafe-chennai-main\infra\cloudformation\cabsafe-aws-stack.yaml
    ```
-3. **GitHub Repository:** Ensure your repository [`https://github.com/dhanush190312/online-cab.git`](https://github.com/dhanush190312/online-cab.git) is **Public** (or accessible to EC2) and has your latest code pushed so instances can clone and build the backend upon boot.
+3. **GitHub Repository:** Ensure your repository [`https://github.com/dhanush190312/cabsafe.git`](https://github.com/dhanush190312/cabsafe.git) is **Public** (or accessible to EC2) and has your latest code pushed so instances can clone and build the backend upon boot.
 
 ---
 
@@ -38,7 +38,7 @@
 3. Click the **Choose file** button.
 4. Browse to and select:
    ```text
-   D:\Dhanush Project Files\cabsafe-chennai-main\infra\cloudformation\cabsafe-aws-stack.yaml
+   C:\cab project\cabsafe-chennai-main\cabsafe-chennai-main\infra\cloudformation\cabsafe-aws-stack.yaml
    ```
 5. Click **Next** at the bottom right.
 
@@ -55,7 +55,7 @@
 | **`AsgMinSize`** | `2` | Minimum instances across 2 Availability Zones |
 | **`AsgDesiredCapacity`** | `2` | Initial active instance count |
 | **`AsgMaxSize`** | `4` | Maximum instances during traffic peaks |
-| **`AppGitRepoUrl`** | `https://github.com/dhanush190312/online-cab.git` | Public Git repository cloned by EC2 user-data |
+| **`AppGitRepoUrl`** | `https://github.com/dhanush190312/cabsafe.git` | Public Git repository cloned by EC2 user-data |
 | **`GitBranch`** | `main` | Git branch or tag to deploy on EC2 instances |
 | **`JwtSecret`** | *(Keep default or enter custom secret)* | Secret key used to sign User and Captain JWT tokens |
 | **`AcmCertificateArn`** | *(Leave blank)* | Leave empty for HTTP (Port 80) testing. Enter ACM ARN only if using HTTPS with a custom domain |

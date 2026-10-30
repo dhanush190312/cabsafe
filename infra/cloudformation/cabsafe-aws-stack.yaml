@@ -85,7 +85,7 @@ Parameters:
 
   AppGitRepoUrl:
     Type: String
-    Default: https://github.com/dhanush190312/online-cab.git
+    Default: https://github.com/dhanush190312/cabsafe.git
     Description: Git repository URL cloned by EC2 instances during bootstrap.
 
   GitBranch:
