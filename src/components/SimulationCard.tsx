@@ -64,6 +64,28 @@ export const SimulationCard: React.FC<SimulationCardProps> = ({
         </div>
       )}
 
+      {/* Active Trip OTP Secret Helper for Dev/Testing */}
+      {activeRide?.status === 'accepted' && activeRide.otp && (
+        <div className="bg-emerald-50 border border-emerald-300 rounded-xl p-2.5 flex items-center justify-between text-xs shadow-2xs">
+          <div className="flex items-center gap-2.5">
+            <div className="w-8 h-8 rounded-full bg-emerald-600 text-white flex items-center justify-center shrink-0">
+              <KeyRound className="w-4 h-4" />
+            </div>
+            <div>
+              <p className="text-[10px] uppercase font-bold text-emerald-800 tracking-wider">
+                Passenger OTP Secret
+              </p>
+              <p className="font-mono text-base font-black text-emerald-950 tracking-widest leading-none mt-0.5">
+                {activeRide.otp}
+              </p>
+            </div>
+          </div>
+          <span className="text-[9px] bg-emerald-200/80 text-emerald-900 font-extrabold px-2 py-0.5 rounded-full border border-emerald-300">
+            Awaiting Verification
+          </span>
+        </div>
+      )}
+
       {/* Action Buttons */}
       <div className="grid grid-cols-2 gap-2">
         <button

@@ -8,6 +8,12 @@ import {
   RefreshCw,
   ShieldCheck,
   Check,
+  Cloud,
+  Cpu,
+  Database,
+  Network,
+  Lock,
+  Layers,
 } from 'lucide-react';
 import type { CaptainRecord, RideRecord } from '../types';
 import { LiveMap } from './LiveMap';
@@ -40,7 +46,7 @@ export const AdminAndAuditView: React.FC<AdminAndAuditViewProps> = ({
   onTriggerSimAction,
 }) => {
   const [auditTab, setAuditTab] = useState<
-    'endpoints' | 'sockets' | 'security' | 'android'
+    'security' | 'aws' | 'endpoints' | 'sockets' | 'android'
   >('security');
   const [adminTableTab, setAdminTableTab] = useState<'drivers' | 'rides'>('drivers');
 
@@ -483,10 +489,11 @@ export const AdminAndAuditView: React.FC<AdminAndAuditViewProps> = ({
           </p>
         </div>
 
-        <div className="flex items-center gap-1 bg-white border border-slate-200 p-1 rounded-xl shadow-xs">
+        <div className="flex items-center gap-1 bg-white border border-slate-200 p-1 rounded-xl shadow-xs overflow-x-auto">
           {(
             [
               { id: 'security', label: 'Security & Boundary', icon: ShieldAlert },
+              { id: 'aws', label: 'AWS Cloud Blueprint', icon: Cloud },
               { id: 'endpoints', label: 'HTTP Matrix', icon: Server },
               { id: 'sockets', label: 'Socket.IO Matrix', icon: Radio },
               { id: 'android', label: 'Android & Release', icon: Smartphone },
@@ -562,6 +569,146 @@ export const AdminAndAuditView: React.FC<AdminAndAuditViewProps> = ({
             <p className="text-xs text-emerald-700 font-medium">
               <strong>Scoped Tracking:</strong> Live driver locations are relayed via <code>captain-location-updated</code> only during active rides (<code>accepted</code> or <code>ongoing</code>) and cleared immediately when a trip ends or is cancelled.
             </p>
+          </div>
+        </div>
+      )}
+
+      {auditTab === 'aws' && (
+        <div className="space-y-4">
+          {/* Top Cloud Overview Cards */}
+          <div className="grid grid-cols-2 lg:grid-cols-4 gap-3">
+            <div className="bg-white border border-slate-200 rounded-2xl p-4 shadow-xs">
+              <span className="text-[10px] font-bold text-slate-400 uppercase tracking-wider block">Target Region</span>
+              <p className="text-base font-black text-slate-900 font-mono mt-0.5">ap-south-1</p>
+              <p className="text-[11px] text-emerald-600 font-medium">AWS Mumbai (Dual-AZ)</p>
+            </div>
+            <div className="bg-white border border-slate-200 rounded-2xl p-4 shadow-xs">
+              <span className="text-[10px] font-bold text-slate-400 uppercase tracking-wider block">Deployment Stack</span>
+              <p className="text-base font-black text-red-600 font-mono mt-0.5">CloudFormation</p>
+              <p className="text-[11px] text-slate-500 font-medium">Single 1-Click Template (~4–6m)</p>
+            </div>
+            <div className="bg-white border border-slate-200 rounded-2xl p-4 shadow-xs">
+              <span className="text-[10px] font-bold text-slate-400 uppercase tracking-wider block">Database Tier</span>
+              <p className="text-base font-black text-slate-900 font-mono mt-0.5">DynamoDB</p>
+              <p className="text-[11px] text-emerald-600 font-medium">4 Tables + GSIs + TTL Auto-Expiry</p>
+            </div>
+            <div className="bg-white border border-slate-200 rounded-2xl p-4 shadow-xs">
+              <span className="text-[10px] font-bold text-slate-400 uppercase tracking-wider block">Fleet Scaling</span>
+              <p className="text-base font-black text-slate-900 font-mono mt-0.5">ALB + ASG</p>
+              <p className="text-[11px] text-slate-500 font-medium">2 to 4 Instances (Auto-Healing)</p>
+            </div>
+          </div>
+
+          {/* Visual Architecture Flow */}
+          <div className="bg-slate-900 text-white rounded-2xl p-5 border border-slate-800 shadow-md space-y-3">
+            <div className="flex items-center justify-between">
+              <div className="flex items-center gap-2">
+                <Layers className="w-4 h-4 text-[#E2FF44]" />
+                <h3 className="text-xs font-bold uppercase tracking-wider text-white">
+                  AWS End-to-End Production Traffic Flow
+                </h3>
+              </div>
+              <span className="text-[10px] bg-white/10 text-slate-300 font-mono px-2 py-0.5 rounded-full">
+                Zero-Hardcoded Secrets
+              </span>
+            </div>
+
+            <div className="grid grid-cols-1 md:grid-cols-5 gap-2 text-xs font-mono text-center">
+              <div className="bg-slate-800/80 p-3 rounded-xl border border-white/10 space-y-1">
+                <span className="text-[10px] text-slate-400 uppercase block">Clients</span>
+                <p className="font-bold text-white">Passenger &amp; Captain</p>
+                <span className="text-[10px] text-slate-400">Mobile &amp; Web</span>
+              </div>
+              <div className="bg-slate-800/80 p-3 rounded-xl border border-white/10 space-y-1">
+                <span className="text-[10px] text-slate-400 uppercase block">Edge &amp; ELB</span>
+                <p className="font-bold text-[#E2FF44]">Application Load Balancer</p>
+                <span className="text-[10px] text-slate-400">Port 80/443 + Stickiness</span>
+              </div>
+              <div className="bg-slate-800/80 p-3 rounded-xl border border-white/10 space-y-1">
+                <span className="text-[10px] text-slate-400 uppercase block">Compute ASG</span>
+                <p className="font-bold text-white">2–4 EC2 Instances</p>
+                <span className="text-[10px] text-slate-400">Amazon Linux 2023</span>
+              </div>
+              <div className="bg-slate-800/80 p-3 rounded-xl border border-white/10 space-y-1">
+                <span className="text-[10px] text-slate-400 uppercase block">Private Route</span>
+                <p className="font-bold text-[#E2FF44]">VPC Gateway Endpoint</p>
+                <span className="text-[10px] text-slate-400">Zero Internet Traversal</span>
+              </div>
+              <div className="bg-slate-800/80 p-3 rounded-xl border border-white/10 space-y-1">
+                <span className="text-[10px] text-slate-400 uppercase block">Persistence</span>
+                <p className="font-bold text-white">Amazon DynamoDB</p>
+                <span className="text-[10px] text-slate-400">Users, Captains, Rides, Tokens</span>
+              </div>
+            </div>
+          </div>
+
+          {/* 6 Core AWS Services Detailed Breakdown */}
+          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4 text-xs">
+            {/* 1. IAM */}
+            <div className="bg-white border border-slate-200 rounded-2xl p-4 space-y-2 shadow-xs">
+              <div className="flex items-center gap-2 text-slate-900 font-bold">
+                <Lock className="w-4 h-4 text-red-600" />
+                <span>1. IAM Least-Privilege Role</span>
+              </div>
+              <p className="text-slate-600 leading-relaxed text-[11px]">
+                Role <code>CabSafeInstanceRole</code> attached to EC2 instances. Grants scoped permissions (<code>dynamodb:GetItem</code>, <code>PutItem</code>, <code>UpdateItem</code>, <code>Query</code>) on <code>CabSafe*</code> tables plus CloudWatch logging. Zero AWS Access Keys stored on disk.
+              </p>
+            </div>
+
+            {/* 2. VPC */}
+            <div className="bg-white border border-slate-200 rounded-2xl p-4 space-y-2 shadow-xs">
+              <div className="flex items-center gap-2 text-slate-900 font-bold">
+                <Network className="w-4 h-4 text-blue-600" />
+                <span>2. Multi-AZ VPC Network</span>
+              </div>
+              <p className="text-slate-600 leading-relaxed text-[11px]">
+                <code>10.20.0.0/16</code> VPC across 2 Availability Zones (<code>ap-south-1a</code>, <code>ap-south-1b</code>). 2 Public subnets for ALB + 2 Private subnets for EC2 with a VPC Gateway Endpoint routing to DynamoDB without internet exposure.
+              </p>
+            </div>
+
+            {/* 3. EC2 */}
+            <div className="bg-white border border-slate-200 rounded-2xl p-4 space-y-2 shadow-xs">
+              <div className="flex items-center gap-2 text-slate-900 font-bold">
+                <Cpu className="w-4 h-4 text-purple-600" />
+                <span>3. EC2 Auto-Bootstrapping</span>
+              </div>
+              <p className="text-slate-600 leading-relaxed text-[11px]">
+                Automated EC2 UserData installs Node 20, git-clones <code>dhanush190312/cabsafe.git</code>, runs <code>npm run build</code>, and starts a systemd service with 15s graceful connection draining on Auto Scaling scale-in.
+              </p>
+            </div>
+
+            {/* 4. DynamoDB */}
+            <div className="bg-white border border-slate-200 rounded-2xl p-4 space-y-2 shadow-xs">
+              <div className="flex items-center gap-2 text-slate-900 font-bold">
+                <Database className="w-4 h-4 text-emerald-600" />
+                <span>4. Amazon DynamoDB Tables</span>
+              </div>
+              <p className="text-slate-600 leading-relaxed text-[11px]">
+                Four On-Demand tables: <code>CabSafeUsers</code> (GSI: <code>EmailIndex</code>), <code>CabSafeCaptains</code> (GSIs: <code>EmailIndex</code>, <code>StatusIndex</code>), <code>CabSafeRides</code>, and <code>CabSafeTokens</code> with native TTL auto-blacklisting.
+              </p>
+            </div>
+
+            {/* 5. ELB */}
+            <div className="bg-white border border-slate-200 rounded-2xl p-4 space-y-2 shadow-xs">
+              <div className="flex items-center gap-2 text-slate-900 font-bold">
+                <Server className="w-4 h-4 text-amber-600" />
+                <span>5. Application Load Balancer</span>
+              </div>
+              <p className="text-slate-600 leading-relaxed text-[11px]">
+                Dual-AZ public ALB with WebSocket sticky sessions (duration: 86,400s) to keep Socket.IO connections pinned. Health check probe targets <code>GET /api/health</code> (200 OK) every 30 seconds.
+              </p>
+            </div>
+
+            {/* 6. Auto Scaling */}
+            <div className="bg-white border border-slate-200 rounded-2xl p-4 space-y-2 shadow-xs">
+              <div className="flex items-center gap-2 text-slate-900 font-bold">
+                <RefreshCw className="w-4 h-4 text-indigo-600" />
+                <span>6. Auto Scaling Group</span>
+              </div>
+              <p className="text-slate-600 leading-relaxed text-[11px]">
+                Maintains a minimum of 2 healthy instances up to 4 during Chennai peak transit hours. Automatically replaces unhealthy instances and rebalances fleet across Availability Zones.
+              </p>
+            </div>
           </div>
         </div>
       )}

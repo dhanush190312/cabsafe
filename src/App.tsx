@@ -1,5 +1,6 @@
 import { useState, useEffect, useCallback, useRef } from 'react';
 import { io, Socket } from 'socket.io-client';
+import { ShieldCheck } from 'lucide-react';
 import type {
   UserRecord,
   CaptainRecord,
@@ -311,56 +312,89 @@ export default function App() {
   return (
     <div className="min-h-screen bg-slate-100 text-slate-900 flex flex-col font-sans">
       {/* Royal 3-Zone Top Bar */}
-      <header className="h-14 flex items-center justify-between gap-8 px-4 md:px-6 border-b border-slate-200 bg-white/95 backdrop-blur-md sticky top-0 z-40 shadow-xs">
-        {/* Zone 1: Royal Wordmark */}
+      <header className="h-14 flex items-center justify-between gap-4 md:gap-8 px-4 md:px-6 border-b border-slate-200 bg-white/95 backdrop-blur-md sticky top-0 z-40 shadow-xs">
+        {/* Zone 1: Royal Wordmark with Brand Badge */}
         <a
           href="#top"
           onClick={(e) => {
             e.preventDefault();
             setActiveTab('passenger');
           }}
-          className="text-lg font-extrabold tracking-tight text-slate-900 font-display whitespace-nowrap shrink-0 flex items-center gap-1.5"
+          className="text-lg font-extrabold tracking-tight text-slate-900 font-display whitespace-nowrap shrink-0 flex items-center gap-2"
         >
-          <span>CabSafe</span>
+          <span className="w-8 h-8 rounded-xl bg-gradient-to-br from-red-600 to-red-700 text-white flex items-center justify-center shadow-xs">
+            <ShieldCheck className="w-4 h-4" />
+          </span>
+          <div className="flex flex-col">
+            <span className="leading-none text-base font-black tracking-tight">CabSafe</span>
+            <span className="text-[9px] font-mono font-bold text-slate-400 leading-tight">
+              Chennai · ap-south-1
+            </span>
+          </div>
         </a>
 
-        {/* Zone 2: Concise navigation links */}
+        {/* Zone 2: Navigation Links with Cross-Tab Status Badges */}
         <nav
           aria-label="Workspace View Switcher"
-          className="flex items-center gap-3 md:gap-6 text-xs md:text-sm font-medium text-slate-600 overflow-x-auto"
+          className="flex items-center gap-2 md:gap-5 text-xs md:text-sm font-medium text-slate-600 overflow-x-auto"
         >
           <button
             type="button"
             onClick={() => setActiveTab('passenger')}
-            className={`py-1 transition-colors whitespace-nowrap shrink-0 cursor-pointer ${
+            className={`py-1 transition-colors whitespace-nowrap shrink-0 cursor-pointer flex items-center gap-1.5 ${
               activeTab === 'passenger'
                 ? 'text-red-600 border-b-2 border-red-600 font-bold'
                 : 'hover:text-slate-900'
             }`}
           >
-            Passenger App
+            <span>Passenger App</span>
+            {passengerRide && (
+              <span className="text-[9px] bg-red-100 text-red-700 font-mono font-bold px-1.5 py-0.2 rounded-full">
+                {passengerRide.status === 'pending'
+                  ? 'Searching'
+                  : passengerRide.status === 'accepted'
+                    ? 'En Route'
+                    : passengerRide.status === 'ongoing'
+                      ? 'In Transit'
+                      : 'Active'}
+              </span>
+            )}
           </button>
           <button
             type="button"
             onClick={() => setActiveTab('captain')}
-            className={`py-1 transition-colors whitespace-nowrap shrink-0 cursor-pointer ${
+            className={`py-1 transition-colors whitespace-nowrap shrink-0 cursor-pointer flex items-center gap-1.5 ${
               activeTab === 'captain'
                 ? 'text-red-600 border-b-2 border-red-600 font-bold'
                 : 'hover:text-slate-900'
             }`}
           >
-            Captain App
+            <span>Captain App</span>
+            {pendingOffers.length > 0 ? (
+              <span className="text-[9px] bg-amber-400 text-slate-950 font-black px-1.5 py-0.2 rounded-full animate-pulse">
+                {pendingOffers.length} {pendingOffers.length === 1 ? 'Offer' : 'Offers'}
+              </span>
+            ) : captainRide ? (
+              <span className="text-[9px] bg-[#E2FF44] text-[#0B0D12] font-black px-1.5 py-0.2 rounded-full">
+                Trip Active
+              </span>
+            ) : null}
           </button>
           <button
             type="button"
             onClick={() => setActiveTab('admin')}
-            className={`py-1 transition-colors whitespace-nowrap shrink-0 cursor-pointer ${
+            className={`py-1 transition-colors whitespace-nowrap shrink-0 cursor-pointer flex items-center gap-1.5 ${
               activeTab === 'admin'
                 ? 'text-red-600 border-b-2 border-red-600 font-bold'
                 : 'hover:text-slate-900'
             }`}
           >
-            Admin Dispatch
+            <span>Admin Dispatch</span>
+            {overview?.stats.activeRides ? (
+              <span className="text-[9px] bg-slate-200 text-slate-800 font-mono font-bold px-1.5 py-0.2 rounded-full">
+                {overview.stats.activeRides}
+              </span>
+            ) : null}
           </button>
           <button
             type="button"
@@ -375,14 +409,23 @@ export default function App() {
           </button>
         </nav>
 
-        {/* Zone 3: Primary Action */}
-        <div className="hidden sm:flex items-center shrink-0">
+        {/* Zone 3: Live Connection & Dev Tools Trigger */}
+        <div className="flex items-center gap-2.5 shrink-0">
+          <div className="hidden lg:flex items-center gap-1.5 text-[10px] font-mono text-slate-500 bg-slate-100 border border-slate-200 px-2.5 py-1 rounded-full">
+            <span
+              className={`w-2 h-2 rounded-full ${
+                socketConnected ? 'bg-emerald-500 animate-pulse' : 'bg-amber-500'
+              }`}
+            />
+            <span>{socketConnected ? 'WebSocket Live' : 'Reconnecting'}</span>
+          </div>
+
           <button
             type="button"
             onClick={() => setShowSimPanel((prev) => !prev)}
-            className="px-3.5 py-1.5 text-xs font-bold text-white bg-red-600 hover:bg-red-700 rounded-lg transition-colors whitespace-nowrap shrink-0 cursor-pointer shadow-sm"
+            className="px-3 py-1.5 text-xs font-bold text-white bg-red-600 hover:bg-red-700 rounded-lg transition-colors whitespace-nowrap shrink-0 cursor-pointer shadow-xs flex items-center gap-1.5"
           >
-            {showSimPanel ? 'Hide Sim Tools' : 'Show Sim Tools'}
+            <span>{showSimPanel ? 'Hide Sim Tools' : 'Show Sim Tools'}</span>
           </button>
         </div>
       </header>
