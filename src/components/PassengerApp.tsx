@@ -1,4 +1,4 @@
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useRef } from 'react';
 import {
   MapPin,
   Navigation,
@@ -920,12 +920,72 @@ export const PassengerApp: React.FC<PassengerAppProps> = ({
     ? Date.now() - new Date(lastUpdateTimestamp).getTime() > 120000
     : false;
 
-  const mapHeightClass =
-    activeRide || bookingStep === 'route'
-      ? 'h-[40%]'
-      : bookingStep === 'search'
-        ? 'h-[26%]'
-        : 'h-[30%]';
+  const [mapHeightPercent, setMapHeightPercent] = useState<number>(36);
+  const [isMapExpanded, setIsMapExpanded] = useState<boolean>(false);
+  const [isDraggingMap, setIsDraggingMap] = useState<boolean>(false);
+  const dragStartYRef = useRef<number>(0);
+  const startPercentRef = useRef<number>(36);
+
+  const handleDragStart = (e: React.MouseEvent) => {
+    e.preventDefault();
+    setIsDraggingMap(true);
+    dragStartYRef.current = e.clientY;
+    startPercentRef.current = isMapExpanded ? 76 : mapHeightPercent;
+
+    const onMouseMove = (moveEvent: MouseEvent) => {
+      const deltaY = moveEvent.clientY - dragStartYRef.current;
+      const totalH = window.innerHeight || 800;
+      const deltaPct = (deltaY / totalH) * 100;
+      const nextPct = Math.min(84, Math.max(20, startPercentRef.current + deltaPct));
+      setMapHeightPercent(nextPct);
+      if (nextPct >= 65) {
+        setIsMapExpanded(true);
+      } else {
+        setIsMapExpanded(false);
+      }
+    };
+
+    const onMouseUp = () => {
+      setIsDraggingMap(false);
+      window.removeEventListener('mousemove', onMouseMove);
+      window.removeEventListener('mouseup', onMouseUp);
+    };
+
+    window.addEventListener('mousemove', onMouseMove);
+    window.addEventListener('mouseup', onMouseUp);
+  };
+
+  const handleTouchStart = (e: React.TouchEvent) => {
+    const touch = e.touches[0];
+    if (!touch) return;
+    setIsDraggingMap(true);
+    dragStartYRef.current = touch.clientY;
+    startPercentRef.current = isMapExpanded ? 76 : mapHeightPercent;
+
+    const onTouchMove = (moveEvent: TouchEvent) => {
+      const currentTouch = moveEvent.touches[0];
+      if (!currentTouch) return;
+      const deltaY = currentTouch.clientY - dragStartYRef.current;
+      const totalH = window.innerHeight || 800;
+      const deltaPct = (deltaY / totalH) * 100;
+      const nextPct = Math.min(84, Math.max(20, startPercentRef.current + deltaPct));
+      setMapHeightPercent(nextPct);
+      if (nextPct >= 65) {
+        setIsMapExpanded(true);
+      } else {
+        setIsMapExpanded(false);
+      }
+    };
+
+    const onTouchEnd = () => {
+      setIsDraggingMap(false);
+      window.removeEventListener('touchmove', onTouchMove);
+      window.removeEventListener('touchend', onTouchEnd);
+    };
+
+    window.addEventListener('touchmove', onTouchMove);
+    window.addEventListener('touchend', onTouchEnd);
+  };
 
   return (
     <div className="relative h-full w-full flex flex-col bg-slate-50 text-slate-900 overflow-hidden">
@@ -975,8 +1035,13 @@ export const PassengerApp: React.FC<PassengerAppProps> = ({
         </div>
       </div>
 
-      {/* Primary Interactive Dark Chennai Map Canvas */}
-      <div className={`${mapHeightClass} w-full relative shrink-0 overflow-hidden transition-all duration-200`}>
+      {/* Primary Interactive Map Canvas (Draggable & Expandable) */}
+      <div
+        style={{ height: `${isMapExpanded ? 76 : mapHeightPercent}%` }}
+        className={`w-full relative shrink-0 overflow-hidden ${
+          isDraggingMap ? '' : 'transition-all duration-200'
+        }`}
+      >
         <LiveMap
           pickupCoords={mapPickup}
           destinationCoords={mapDest}
@@ -1007,31 +1072,21 @@ export const PassengerApp: React.FC<PassengerAppProps> = ({
               setDestinationCoords(coords);
             }
           }}
-          interactiveHint={
-            !activeRide
-              ? bookingStep === 'route'
-                ? 'Tap map to fine-tune your Chennai pickup pin'
-                : !pickupCoords
-                  ? 'Tap map or select below to set Pick-up pin'
-                  : !destinationCoords
-                    ? 'Tap map or select below to set Drop-off pin'
-                    : `Tap map to adjust ${activeField === 'pickup' ? 'Pick-up' : 'Drop-off'} in Chennai`
-              : undefined
-          }
+          isExpanded={isMapExpanded}
+          onToggleExpand={() => setIsMapExpanded((prev) => !prev)}
+          onLocateGps={handleUseDeviceGps}
         />
+      </div>
 
-
-        {/* Floating Current-Location Button on Map */}
-        <button
-          type="button"
-          onClick={handleUseDeviceGps}
-          data-testid="use-device-gps-btn"
-          title="Use current Chennai GPS location"
-          className="absolute bottom-2 right-2.5 z-10 min-h-[32px] px-3 py-1 rounded-full bg-white hover:bg-slate-50 text-red-600 shadow-md border border-slate-200 text-[11px] font-bold flex items-center gap-1.5 cursor-pointer"
-        >
-          <LocateFixed className="w-3.5 h-3.5 text-red-600" />
-          <span>GPS</span>
-        </button>
+      {/* Interactive Draggable Resize Bar (Extend / Collapse Map) */}
+      <div
+        onMouseDown={handleDragStart}
+        onTouchStart={handleTouchStart}
+        onDoubleClick={() => setIsMapExpanded((prev) => !prev)}
+        title="Drag up or down to resize/extend map (Double-click to toggle fullscreen)"
+        className="w-full h-4 bg-slate-100 hover:bg-red-50 border-y border-slate-200 cursor-row-resize flex items-center justify-center select-none shrink-0 group transition-colors"
+      >
+        <div className="w-10 h-1 rounded-full bg-slate-300 group-hover:bg-red-500 transition-colors" />
       </div>
 
       {/* Royal Executive Bottom Sheet Area */}

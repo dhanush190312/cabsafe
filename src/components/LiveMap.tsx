@@ -32,6 +32,9 @@ export interface LiveMapProps {
   onSelectLandmark?: (coords: Coordinates, name: string) => void;
   interactiveHint?: string;
   initialRegion?: 'tamilnadu' | 'chennai';
+  isExpanded?: boolean;
+  onToggleExpand?: () => void;
+  onLocateGps?: () => void;
 }
 
 const CHENNAI_CENTER: [number, number] = [
@@ -44,9 +47,6 @@ const TAMIL_NADU_CENTER: [number, number] = [
   TAMIL_NADU_MAP_CONFIG.defaultCenter.lon,
 ];
 
-/**
- * Curated Chennai quick-navigation hotspots with verified coordinates
- */
 const CHENNAI_QUICK_LANDMARKS = [
   { name: 'T. Nagar', lat: 13.0418, lon: 80.2341, icon: '🛍️' },
   { name: 'MAA Airport', lat: 12.9902, lon: 80.1693, icon: '✈️' },
@@ -57,9 +57,6 @@ const CHENNAI_QUICK_LANDMARKS = [
   { name: 'Anna Nagar', lat: 13.085, lon: 80.2101, icon: '🏛️' },
 ];
 
-/**
- * Calculates bearing angle (0-360 degrees) between two points
- */
 function calculateBearing(start: Coordinates, end: Coordinates): number {
   const startLat = (start.lat * Math.PI) / 180;
   const startLon = (start.lon * Math.PI) / 180;
@@ -77,9 +74,6 @@ function calculateBearing(start: Coordinates, end: Coordinates): number {
   return (degrees + 360) % 360;
 }
 
-/**
- * Creates standard monospace tag pin - Royal Red & Executive White
- */
 function createPinIcon(
   bgColor: string,
   labelText: string,
@@ -129,9 +123,6 @@ function createPinIcon(
   });
 }
 
-/**
- * Creates a radar sonar pulsating pickup pin for active pickup beacons
- */
 function createPickupPulseIcon(labelText: string, inside: boolean = true) {
   const ringColor = inside ? '#DC2626' : '#EF4444';
   const bgColor = inside ? '#DC2626' : '#991B1B';
@@ -188,9 +179,6 @@ function createPickupPulseIcon(labelText: string, inside: boolean = true) {
   });
 }
 
-/**
- * Creates an animated top-down car vector with heading rotation and royal accents
- */
 function createVehicleIcon(
   headingDeg: number,
   vehicleType: VehicleType = 'car',
@@ -239,12 +227,9 @@ function createVehicleIcon(
           position:relative;
         ">
           <svg viewBox="0 0 64 64" fill="none" style="width:100%;height:100%;">
-            <!-- Headlight beams -->
             <path d="M22 6 L12 0 M42 6 L52 0" stroke="${color}" stroke-width="2.5" stroke-linecap="round" opacity="0.85"/>
             <polygon points="20,12 8,-2 18,-4" fill="${color}" opacity="0.22"/>
             <polygon points="44,12 56,-2 46,-4" fill="${color}" opacity="0.22"/>
-
-            <!-- Vehicle Body -->
             ${
               isBike
                 ? `
@@ -276,9 +261,6 @@ function createVehicleIcon(
   });
 }
 
-/**
- * Creates custom pill pin for Tamil Nadu Major City Hubs
- */
 function createCityHubIcon(city: MajorCityHub) {
   const isMetro = Boolean(city.isMetro);
   return L.divIcon({
@@ -295,43 +277,34 @@ function createCityHubIcon(city: MajorCityHub) {
         <div style="
           display:inline-flex;
           align-items:center;
-          gap:4px;
+          gap:3px;
           background:${isMetro ? '#DC2626' : '#FFFFFF'};
           color:${isMetro ? '#FFFFFF' : '#0F172A'};
-          padding:2px 7px;
+          padding:1.5px 6px;
           border-radius:9999px;
           font-family:'Plus Jakarta Sans',sans-serif;
-          font-size:9px;
+          font-size:8.5px;
           font-weight:700;
-          border:1.5px solid ${isMetro ? '#FFFFFF' : '#E2E8F0'};
-          box-shadow:0 3px 10px rgba(0,0,0,0.18);
+          border:1px solid ${isMetro ? '#FFFFFF' : '#CBD5E1'};
+          box-shadow:0 2px 8px rgba(0,0,0,0.18);
           white-space:nowrap;
         ">
           <span>${city.icon}</span>
           <span>${city.name}</span>
-          ${
-            isMetro
-              ? '<span style="background:#FFFFFF;color:#DC2626;padding:0.5px 3.5px;border-radius:3px;font-size:7px;font-weight:800">METRO</span>'
-              : ''
-          }
         </div>
         <div style="
-          width:6px;
-          height:6px;
+          width:5px;
+          height:5px;
           border-radius:9999px;
           background:${isMetro ? '#DC2626' : '#475569'};
-          border:1.5px solid #FFFFFF;
-          margin-top:2px;
-          box-shadow:0 1px 4px rgba(0,0,0,0.3);
+          border:1px solid #FFFFFF;
+          margin-top:1.5px;
         "></div>
       </div>
     `,
   });
 }
 
-/**
- * Clean Executive Silver Canvas vector grid base layer
- */
 function createUrbanCanvasGridLayer(): L.GridLayer {
   const UrbanGrid = L.GridLayer.extend({
     createTile: function (coords: L.Coords) {
@@ -391,6 +364,9 @@ export const LiveMap: React.FC<LiveMapProps> = ({
   onSelectLandmark,
   interactiveHint,
   initialRegion = 'tamilnadu',
+  isExpanded = false,
+  onToggleExpand,
+  onLocateGps,
 }) => {
   const containerRef = useRef<HTMLDivElement | null>(null);
   const mapRef = useRef<L.Map | null>(null);
@@ -404,10 +380,8 @@ export const LiveMap: React.FC<LiveMapProps> = ({
   const [showCorridors, setShowCorridors] = useState<boolean>(true);
   const [showCityHubs, setShowCityHubs] = useState<boolean>(true);
   const [mapTileStyle, setMapTileStyle] = useState<'standard' | 'satellite'>('standard');
-  const [currentZoom, setCurrentZoom] = useState<number>(
-    initialRegion === 'tamilnadu' ? TAMIL_NADU_MAP_CONFIG.defaultZoom : CHENNAI_MAP_CONFIG.defaultZoom
-  );
-  const [centerDistrict, setCenterDistrict] = useState<string>('Tamil Nadu (Statewide)');
+  const [showLayersMenu, setShowLayersMenu] = useState<boolean>(false);
+  const [showQuickCities, setShowQuickCities] = useState<boolean>(false);
 
   const onMapClickRef = useRef(onMapClick);
   onMapClickRef.current = onMapClick;
@@ -446,23 +420,23 @@ export const LiveMap: React.FC<LiveMapProps> = ({
 
     // 1. Outer Tamil Nadu State Boundary Polygon
     L.polygon(TAMIL_NADU_BORDER_POLYGON as [number, number][], {
-      color: '#4F46E5', // Royal Indigo Stroke
-      weight: 2,
-      opacity: 0.75,
-      dashArray: '6, 6',
+      color: '#4F46E5',
+      weight: 1.8,
+      opacity: 0.7,
+      dashArray: '5, 5',
       fillColor: '#4F46E5',
-      fillOpacity: 0.03,
+      fillOpacity: 0.02,
       interactive: false,
     }).addTo(map);
 
     // 2. Inner Chennai Metropolitan Area Boundary Polygon
     L.polygon(CHENNAI_PROVISIONAL_POLYGON as [number, number][], {
-      color: '#DC2626', // Royal Crimson Stroke
-      weight: 2,
-      opacity: 0.85,
+      color: '#DC2626',
+      weight: 1.8,
+      opacity: 0.8,
       dashArray: '4, 4',
       fillColor: '#DC2626',
-      fillOpacity: 0.06,
+      fillOpacity: 0.04,
       interactive: false,
     }).addTo(map);
 
@@ -476,25 +450,14 @@ export const LiveMap: React.FC<LiveMapProps> = ({
     mapRef.current = map;
 
     map.on('click', (e: L.LeafletMouseEvent) => {
+      setShowLayersMenu(false);
+      setShowQuickCities(false);
       if (onMapClickRef.current) {
         onMapClickRef.current({
           lat: Number(e.latlng.lat.toFixed(5)),
           lon: Number(e.latlng.lng.toFixed(5)),
         });
       }
-    });
-
-    map.on('zoomend', () => {
-      setCurrentZoom(map.getZoom());
-    });
-
-    map.on('moveend', () => {
-      const center = map.getCenter();
-      const label = getTamilNaduRegionLabel({
-        lat: Number(center.lat.toFixed(4)),
-        lon: Number(center.lng.toFixed(4)),
-      });
-      setCenterDistrict(label);
     });
 
     const resizeTimer = setTimeout(() => {
@@ -510,6 +473,18 @@ export const LiveMap: React.FC<LiveMapProps> = ({
       cityHubsLayerGroupRef.current = null;
     };
   }, [initialRegion]);
+
+  // Handle ResizeObserver so extending or dragging the map immediately invalidates map size
+  useEffect(() => {
+    if (!containerRef.current || !mapRef.current) return;
+    const observer = new ResizeObserver(() => {
+      mapRef.current?.invalidateSize();
+    });
+    observer.observe(containerRef.current);
+    return () => {
+      observer.disconnect();
+    };
+  }, []);
 
   // Update Tile Style (Standard OSM vs Satellite Imagery)
   useEffect(() => {
@@ -562,7 +537,7 @@ export const LiveMap: React.FC<LiveMapProps> = ({
         });
 
         marker.bindTooltip(
-          `<strong>${city.name} (${city.district} District)</strong><br/><span style="color:#64748B">${city.tagline}</span><br/><span style="color:#DC2626;font-weight:600">Click to focus & route</span>`,
+          `<strong>${city.name}</strong><br/><span style="color:#64748B">${city.tagline}</span>`,
           {
             className: 'cabsafe-corridor-tooltip',
             sticky: true,
@@ -574,7 +549,7 @@ export const LiveMap: React.FC<LiveMapProps> = ({
     }
   }, [showCityHubs]);
 
-  // Render Arterial & State Traffic Corridors when enabled
+  // Render Arterial & State Traffic Corridors
   useEffect(() => {
     const corridorGroup = corridorLayerGroupRef.current;
     if (!corridorGroup) return;
@@ -588,24 +563,22 @@ export const LiveMap: React.FC<LiveMapProps> = ({
       ];
 
       for (const corridor of allCorridors) {
-        // Outer glow
         L.polyline(corridor.points, {
           color: corridor.color,
-          weight: 6,
-          opacity: 0.35,
+          weight: 4.5,
+          opacity: 0.28,
           lineCap: 'round',
         }).addTo(corridorGroup);
 
-        // Core polyline
         const line = L.polyline(corridor.points, {
           color: corridor.color,
-          weight: 3,
-          opacity: 0.95,
+          weight: 2.2,
+          opacity: 0.9,
           lineCap: 'round',
         }).addTo(corridorGroup);
 
         line.bindTooltip(
-          `<strong>${corridor.name}</strong><br/>Corridor: <span style="color:#FFFFFF">${corridor.shortName}</span><br/>Live Traffic: <span style="color:#E2FF44;font-weight:bold">${corridor.trafficStatus.toUpperCase()}</span>`,
+          `<strong>${corridor.shortName}</strong><br/>Live Traffic: <span style="color:#E2FF44;font-weight:bold">${corridor.trafficStatus.toUpperCase()}</span>`,
           {
             className: 'cabsafe-corridor-tooltip',
             sticky: true,
@@ -650,17 +623,17 @@ export const LiveMap: React.FC<LiveMapProps> = ({
       }
     }
 
-    // 2. Royal Crimson (#DC2626) Route Polyline with White Underlay
+    // 2. Royal Crimson Route Polyline
     if (routeGeometry && routeGeometry.length > 1) {
       L.polyline(routeGeometry, {
         color: '#FFFFFF',
-        weight: 8,
+        weight: 7,
         opacity: 0.95,
       }).addTo(group);
 
       const polyline = L.polyline(routeGeometry, {
         color: '#DC2626',
-        weight: 4.5,
+        weight: 4,
         opacity: 1,
       });
       polyline.addTo(group);
@@ -669,12 +642,12 @@ export const LiveMap: React.FC<LiveMapProps> = ({
       }
     }
 
-    // 3. Pickup Marker with pulsating radar sonar ring
+    // 3. Pickup Marker
     if (pickupCoords) {
       const pt: [number, number] = [pickupCoords.lat, pickupCoords.lon];
       const inChennai = isPointInChennaiServiceArea(pickupCoords);
       const inTN = isPointInTamilNaduServiceArea(pickupCoords);
-      const label = inChennai ? 'PICKUP' : inTN ? 'PICKUP · TN' : 'PICKUP (OUTSIDE)';
+      const label = inChennai ? 'PICKUP' : inTN ? 'PICKUP · TN' : 'OUTSIDE TN';
       boundsPoints.push(pt);
       L.marker(pt, {
         icon: createPickupPulseIcon(label, inChennai || inTN),
@@ -687,7 +660,7 @@ export const LiveMap: React.FC<LiveMapProps> = ({
       const pt: [number, number] = [destinationCoords.lat, destinationCoords.lon];
       const inChennai = isPointInChennaiServiceArea(destinationCoords);
       const inTN = isPointInTamilNaduServiceArea(destinationCoords);
-      const label = inChennai ? 'DROPOFF' : inTN ? 'DROPOFF · TN' : 'DROPOFF (OUTSIDE)';
+      const label = inChennai ? 'DROPOFF' : inTN ? 'DROPOFF · TN' : 'OUTSIDE TN';
       boundsPoints.push(pt);
       L.marker(pt, {
         icon: createPinIcon(
@@ -700,7 +673,7 @@ export const LiveMap: React.FC<LiveMapProps> = ({
       }).addTo(group);
     }
 
-    // 5. Active Captain with Animated Top-Down Car & Bearing Rotation
+    // 5. Active Captain
     if (captainCoords) {
       const pt: [number, number] = [captainCoords.lat, captainCoords.lon];
       boundsPoints.push(pt);
@@ -729,8 +702,8 @@ export const LiveMap: React.FC<LiveMapProps> = ({
     map.invalidateSize();
     if (boundsPoints.length >= 2) {
       map.fitBounds(L.latLngBounds(boundsPoints), {
-        paddingTopLeft: [48, 64],
-        paddingBottomRight: [48, 48],
+        paddingTopLeft: [40, 48],
+        paddingBottomRight: [40, 40],
         maxZoom: 15,
       });
     } else if (boundsPoints.length === 1) {
@@ -752,7 +725,7 @@ export const LiveMap: React.FC<LiveMapProps> = ({
     setRegionMode('tamilnadu');
     if (mapRef.current) {
       mapRef.current.flyTo(TAMIL_NADU_CENTER, TAMIL_NADU_MAP_CONFIG.defaultZoom, {
-        duration: 1.2,
+        duration: 1.1,
       });
     }
   };
@@ -761,7 +734,7 @@ export const LiveMap: React.FC<LiveMapProps> = ({
     setRegionMode('chennai');
     if (mapRef.current) {
       mapRef.current.flyTo(CHENNAI_CENTER, CHENNAI_MAP_CONFIG.defaultZoom, {
-        duration: 1.2,
+        duration: 1.1,
       });
     }
   };
@@ -775,6 +748,10 @@ export const LiveMap: React.FC<LiveMapProps> = ({
   };
 
   const handleLocateMe = () => {
+    if (onLocateGps) {
+      onLocateGps();
+      return;
+    }
     if ('geolocation' in navigator) {
       navigator.geolocation.getCurrentPosition(
         (pos) => {
@@ -793,7 +770,6 @@ export const LiveMap: React.FC<LiveMapProps> = ({
     }
   };
 
-  // Quick hotspots list based on active region mode
   const currentHotspots = useMemo(() => {
     if (regionMode === 'tamilnadu') {
       return TAMIL_NADU_MAJOR_CITIES.map((c) => ({
@@ -820,167 +796,232 @@ export const LiveMap: React.FC<LiveMapProps> = ({
     >
       <div ref={containerRef} className="w-full h-full" />
 
-      {/* Top Floating Region Mode Switcher & Quick Navigation Bar */}
-      {!routeGeometry && (
-        <div className="absolute top-2.5 left-2.5 right-2.5 z-20 flex flex-col gap-1.5 pointer-events-none">
-          {/* Region Tabs Header */}
-          <div className="flex items-center justify-between gap-2 pointer-events-auto">
-            {/* Dual Region Mode Switcher Pills */}
-            <div className="inline-flex bg-slate-900/90 backdrop-blur-md p-1 rounded-full border border-slate-700/80 shadow-xl">
-              <button
-                type="button"
-                onClick={handleSwitchToTamilNadu}
-                className={`px-3 py-1 rounded-full text-[11px] font-bold flex items-center gap-1.5 transition-all cursor-pointer ${
-                  regionMode === 'tamilnadu'
-                    ? 'bg-gradient-to-r from-red-600 to-red-700 text-white shadow-md'
-                    : 'text-slate-300 hover:text-white'
-                }`}
-                title="Switch to All Tamil Nadu Statewide View (38 Districts)"
-              >
-                <span>🗺️</span>
-                <span>Tamil Nadu (All 38 Districts)</span>
-              </button>
-              <button
-                type="button"
-                onClick={handleSwitchToChennai}
-                className={`px-3 py-1 rounded-full text-[11px] font-bold flex items-center gap-1.5 transition-all cursor-pointer ${
-                  regionMode === 'chennai'
-                    ? 'bg-gradient-to-r from-red-600 to-red-700 text-white shadow-md'
-                    : 'text-slate-300 hover:text-white'
-                }`}
-                title="Switch to Chennai Metropolitan Zone (Central & Corridors)"
-              >
-                <span>📍</span>
-                <span>Chennai Metro</span>
-              </button>
-            </div>
+      {/* TOP HEADER CONTROLS (Compact, Unobtrusive & Clean) */}
+      <div className="absolute top-2.5 left-2.5 right-2.5 z-20 flex items-center justify-between pointer-events-none">
+        {/* Compact Glassmorphic Region Switcher */}
+        <div className="inline-flex bg-slate-900/85 backdrop-blur-md p-0.5 rounded-full border border-slate-700/60 shadow-lg pointer-events-auto">
+          <button
+            type="button"
+            onClick={handleSwitchToTamilNadu}
+            className={`px-2.5 py-1 rounded-full text-[10.5px] font-bold flex items-center gap-1 transition-all cursor-pointer ${
+              regionMode === 'tamilnadu'
+                ? 'bg-red-600 text-white shadow-xs'
+                : 'text-slate-300 hover:text-white'
+            }`}
+            title="Tamil Nadu Statewide (38 Districts)"
+          >
+            <span>🗺️</span>
+            <span>Tamil Nadu</span>
+          </button>
+          <button
+            type="button"
+            onClick={handleSwitchToChennai}
+            className={`px-2.5 py-1 rounded-full text-[10.5px] font-bold flex items-center gap-1 transition-all cursor-pointer ${
+              regionMode === 'chennai'
+                ? 'bg-red-600 text-white shadow-xs'
+                : 'text-slate-300 hover:text-white'
+            }`}
+            title="Chennai Metropolitan Area"
+          >
+            <span>📍</span>
+            <span>Chennai</span>
+          </button>
+        </div>
 
-            {/* Live Center HUD Indicator */}
-            <div className="hidden sm:flex items-center gap-2 bg-white/95 backdrop-blur-md px-3 py-1 rounded-full border border-slate-200 shadow-md text-[11px] font-semibold text-slate-700">
-              <span className="w-2 h-2 rounded-full bg-emerald-500 animate-pulse" />
-              <span>{centerDistrict}</span>
-              <span className="text-slate-400 font-mono text-[10px]">z{currentZoom}</span>
-            </div>
-          </div>
+        {/* Top Right Quick Toolbar (Cities Tray, Layers Popover, Expand Toggle) */}
+        <div className="flex items-center gap-1.5 pointer-events-auto relative">
+          {/* Quick Cities Toggle */}
+          <button
+            type="button"
+            onClick={() => {
+              setShowQuickCities((prev) => !prev);
+              setShowLayersMenu(false);
+            }}
+            title="Toggle Quick City Jump"
+            className={`h-7 px-2.5 rounded-full text-[10.5px] font-bold border shadow-md flex items-center gap-1 cursor-pointer transition-colors ${
+              showQuickCities
+                ? 'bg-red-600 text-white border-red-600'
+                : 'bg-white/95 hover:bg-slate-50 text-slate-700 border-slate-200'
+            }`}
+          >
+            <span>📍</span>
+            <span>Cities</span>
+          </button>
 
-          {/* Quick-Pick Hotspots Carousel */}
-          <div className="overflow-x-auto no-scrollbar flex items-center gap-1.5 py-1 pointer-events-auto">
-            {currentHotspots.map((lm) => (
-              <button
-                key={lm.name}
-                type="button"
-                onClick={() => {
-                  if (mapRef.current) {
-                    mapRef.current.flyTo([lm.lat, lm.lon], lm.zoom || 12, { duration: 1 });
+          {/* Map Layers Menu Button */}
+          <button
+            type="button"
+            onClick={() => {
+              setShowLayersMenu((prev) => !prev);
+              setShowQuickCities(false);
+            }}
+            title="Map Layers & Overlays"
+            className={`w-7 h-7 rounded-full text-xs font-bold border shadow-md flex items-center justify-center cursor-pointer transition-colors ${
+              showLayersMenu
+                ? 'bg-slate-900 text-white border-slate-900'
+                : 'bg-white/95 hover:bg-slate-50 text-slate-700 border-slate-200'
+            }`}
+          >
+            <span>🥞</span>
+          </button>
+
+          {/* Expand / Minimize Map Button */}
+          {onToggleExpand && (
+            <button
+              type="button"
+              onClick={onToggleExpand}
+              title={isExpanded ? 'Minimize Map view' : 'Extend / Expand Map view'}
+              className="w-7 h-7 rounded-full bg-white/95 hover:bg-slate-50 border border-slate-200 text-slate-700 shadow-md flex items-center justify-center text-xs font-bold cursor-pointer transition-colors"
+            >
+              {isExpanded ? '🗗' : '⛶'}
+            </button>
+          )}
+
+          {/* Floating Layers Dropdown Popover */}
+          {showLayersMenu && (
+            <div className="absolute top-9 right-0 z-30 w-52 bg-white/95 backdrop-blur-md rounded-2xl p-3 border border-slate-200 shadow-2xl space-y-2 text-xs text-slate-800 animate-in fade-in zoom-in-95">
+              <div className="flex items-center justify-between pb-1.5 border-b border-slate-100">
+                <span className="font-bold text-slate-900 text-[11px]">Map Layers & Style</span>
+                <button
+                  type="button"
+                  onClick={() => setShowLayersMenu(false)}
+                  className="text-slate-400 hover:text-slate-600 text-xs cursor-pointer p-0.5"
+                >
+                  ✕
+                </button>
+              </div>
+
+              <label className="flex items-center justify-between cursor-pointer py-1 hover:bg-slate-50 px-1 rounded-lg">
+                <span className="font-medium text-slate-700 flex items-center gap-1.5 text-[11px]">
+                  <span className="w-2 h-2 rounded-full bg-red-600" />
+                  Highways & Corridors
+                </span>
+                <input
+                  type="checkbox"
+                  checked={showCorridors}
+                  onChange={(e) => setShowCorridors(e.target.checked)}
+                  className="rounded text-red-600 cursor-pointer"
+                />
+              </label>
+
+              <label className="flex items-center justify-between cursor-pointer py-1 hover:bg-slate-50 px-1 rounded-lg">
+                <span className="font-medium text-slate-700 flex items-center gap-1.5 text-[11px]">
+                  <span className="w-2 h-2 rounded-full bg-indigo-600" />
+                  City Hub Pins
+                </span>
+                <input
+                  type="checkbox"
+                  checked={showCityHubs}
+                  onChange={(e) => setShowCityHubs(e.target.checked)}
+                  className="rounded text-red-600 cursor-pointer"
+                />
+              </label>
+
+              <label className="flex items-center justify-between cursor-pointer py-1 hover:bg-slate-50 px-1 rounded-lg">
+                <span className="font-medium text-slate-700 flex items-center gap-1.5 text-[11px]">
+                  <span>🛰️</span>
+                  Satellite Imagery
+                </span>
+                <input
+                  type="checkbox"
+                  checked={mapTileStyle === 'satellite'}
+                  onChange={(e) =>
+                    setMapTileStyle(e.target.checked ? 'satellite' : 'standard')
                   }
-                  if (onSelectLandmark) {
-                    onSelectLandmark({ lat: lm.lat, lon: lm.lon }, lm.name);
-                  } else if (onMapClickRef.current) {
-                    onMapClickRef.current({ lat: lm.lat, lon: lm.lon });
-                  }
-                }}
-                className="bg-white/95 hover:bg-red-50/90 border border-slate-200 hover:border-red-400 px-2.5 py-1 rounded-full text-[10px] font-semibold text-slate-700 hover:text-red-700 whitespace-nowrap shrink-0 transition-all cursor-pointer flex items-center gap-1 shadow-sm"
-              >
-                <span>{lm.icon}</span>
-                <span>{lm.name}</span>
-              </button>
-            ))}
-          </div>
+                  className="rounded text-red-600 cursor-pointer"
+                />
+              </label>
+            </div>
+          )}
+        </div>
+      </div>
+
+      {/* QUICK CITY JUMP TRAY (clean, collapsible, unobtrusive) */}
+      {showQuickCities && (
+        <div className="absolute top-11 left-2.5 right-2.5 z-20 flex items-center gap-1 overflow-x-auto no-scrollbar py-1 animate-in fade-in slide-in-from-top-1 pointer-events-auto">
+          {currentHotspots.map((lm) => (
+            <button
+              key={lm.name}
+              type="button"
+              onClick={() => {
+                if (mapRef.current) {
+                  mapRef.current.flyTo([lm.lat, lm.lon], lm.zoom || 12, { duration: 1 });
+                }
+                if (onSelectLandmark) {
+                  onSelectLandmark({ lat: lm.lat, lon: lm.lon }, lm.name);
+                } else if (onMapClickRef.current) {
+                  onMapClickRef.current({ lat: lm.lat, lon: lm.lon });
+                }
+                setShowQuickCities(false);
+              }}
+              className="bg-white/95 hover:bg-red-50 border border-slate-200 hover:border-red-400 px-2.5 py-1 rounded-full text-[10px] font-semibold text-slate-700 hover:text-red-700 whitespace-nowrap shrink-0 transition-all cursor-pointer flex items-center gap-1 shadow-md"
+            >
+              <span>{lm.icon}</span>
+              <span>{lm.name}</span>
+            </button>
+          ))}
+          <button
+            type="button"
+            onClick={() => setShowQuickCities(false)}
+            title="Close"
+            className="w-5 h-5 rounded-full bg-slate-200 hover:bg-slate-300 text-slate-600 text-[9px] flex items-center justify-center shrink-0 cursor-pointer ml-1"
+          >
+            ✕
+          </button>
         </div>
       )}
 
-      {/* Floating Route Distance & Duration HUD Badge */}
+      {/* FLOATING ROUTE HUD BADGE (When navigating active route) */}
       {(routeDistanceText || routeDurationText) && (
-        <div className="absolute top-2.5 left-3 right-3 z-20 flex justify-center pointer-events-none">
-          <div className="bg-white/95 backdrop-blur-md border border-red-200 px-4 py-1.5 rounded-full shadow-lg flex items-center gap-2.5 text-xs font-bold text-slate-800 pointer-events-auto">
-            <span className="w-2.5 h-2.5 rounded-full bg-red-600 animate-ping" />
+        <div className="absolute top-11 left-3 right-3 z-20 flex justify-center pointer-events-none">
+          <div className="bg-white/95 backdrop-blur-md border border-red-200 px-3.5 py-1.5 rounded-full shadow-lg flex items-center gap-2 text-xs font-bold text-slate-800 pointer-events-auto">
+            <span className="w-2 h-2 rounded-full bg-red-600 animate-ping" />
             <span className="text-red-600 font-bold">{routeDistanceText}</span>
             <span className="text-slate-300">•</span>
             <span className="text-slate-800">{routeDurationText}</span>
-            <span className="text-slate-500 text-[10px] hidden sm:inline">
-              via Tamil Nadu National Highways & Expressways
-            </span>
           </div>
         </div>
       )}
 
-      {/* Interactive Hint */}
-      {interactiveHint && (
-        <div className="pointer-events-none absolute top-20 left-12 right-12 z-20 flex justify-center">
-          <div className="bg-white/95 backdrop-blur-md text-slate-700 border border-slate-200 text-[10px] font-semibold px-3.5 py-1 rounded-full truncate shadow-md">
-            {interactiveHint}
-          </div>
-        </div>
-      )}
-
-      {/* Floating Bottom Control Suite */}
+      {/* BOTTOM FLOATING CONTROLS (Extremely Clean & Minimal) */}
       <div className="absolute bottom-2.5 left-2.5 right-2.5 z-20 flex items-center justify-between pointer-events-none">
-        {/* Left Side: Overlays and Quick Controls */}
-        <div className="flex items-center gap-1.5 pointer-events-auto flex-wrap">
-          {/* Quick Recenter Button */}
+        {/* Bottom Left: Compact Recenter / Region Status Badge */}
+        <button
+          type="button"
+          onClick={regionMode === 'tamilnadu' ? handleSwitchToTamilNadu : handleSwitchToChennai}
+          title="Click to Recenter"
+          className="bg-white/95 hover:bg-slate-50 border border-slate-200 px-2.5 py-1 rounded-full text-[10px] font-bold text-slate-700 shadow-md transition-colors cursor-pointer flex items-center gap-1.5 pointer-events-auto"
+        >
+          <span className="w-1.5 h-1.5 rounded-full bg-emerald-500 animate-pulse" />
+          <span>{regionMode === 'tamilnadu' ? 'Tamil Nadu' : 'Chennai Metro'}</span>
+        </button>
+
+        {/* Bottom Right: Clean Vertical Control Pill */}
+        <div className="flex flex-col bg-white border border-slate-200 rounded-2xl shadow-lg overflow-hidden pointer-events-auto">
+          {onToggleExpand && (
+            <button
+              type="button"
+              onClick={onToggleExpand}
+              title={isExpanded ? 'Minimize Map view' : 'Extend / Expand Map view'}
+              className="w-7 h-7 flex items-center justify-center hover:bg-slate-100 text-slate-700 text-xs font-bold border-b border-slate-100 cursor-pointer"
+            >
+              {isExpanded ? '🗗' : '⛶'}
+            </button>
+          )}
           <button
             type="button"
-            onClick={regionMode === 'tamilnadu' ? handleSwitchToTamilNadu : handleSwitchToChennai}
-            title={
-              regionMode === 'tamilnadu'
-                ? 'Recenter on Tamil Nadu State Center (11.12°N, 78.65°E)'
-                : 'Recenter on Chennai Metro (13.08°N, 80.27°E)'
-            }
-            className="bg-white hover:bg-slate-50 border border-slate-200 px-2.5 py-1 rounded-full text-[10px] font-mono font-bold text-red-600 cursor-pointer shadow-md transition-colors"
+            onClick={handleLocateMe}
+            data-testid="use-device-gps-btn"
+            title="Locate GPS position"
+            className="w-7 h-7 flex items-center justify-center hover:bg-red-50 text-red-600 text-xs font-bold border-b border-slate-100 cursor-pointer"
           >
-            {regionMode === 'tamilnadu' ? 'TN State (11.12°N, 78.65°E)' : 'Chennai (13.08°N, 80.27°E)'}
+            ◎
           </button>
-
-          {/* Toggle Corridors */}
-          <button
-            type="button"
-            onClick={() => setShowCorridors((prev) => !prev)}
-            title="Toggle Tamil Nadu State Highways & Expressways (NH44, NH45, NH48/544, ECR, OMR)"
-            className={`border px-2.5 py-1 rounded-full text-[10px] font-bold cursor-pointer shadow-md transition-colors ${
-              showCorridors
-                ? 'bg-red-600 text-white border-red-600'
-                : 'bg-white hover:bg-slate-50 text-slate-700 border-slate-200'
-            }`}
-          >
-            {showCorridors ? '✓ Corridors ON' : 'Corridors'}
-          </button>
-
-          {/* Toggle City Hubs */}
-          <button
-            type="button"
-            onClick={() => setShowCityHubs((prev) => !prev)}
-            title="Toggle Major City Hub Markers across Tamil Nadu"
-            className={`border px-2.5 py-1 rounded-full text-[10px] font-bold cursor-pointer shadow-md transition-colors ${
-              showCityHubs
-                ? 'bg-slate-800 text-white border-slate-800'
-                : 'bg-white hover:bg-slate-50 text-slate-700 border-slate-200'
-            }`}
-          >
-            {showCityHubs ? '✓ City Hubs' : 'City Hubs'}
-          </button>
-
-          {/* Satellite / Standard Vector Toggle */}
-          <button
-            type="button"
-            onClick={() => setMapTileStyle((prev) => (prev === 'standard' ? 'satellite' : 'standard'))}
-            title="Toggle Satellite Imagery vs Clean Vector Cartography"
-            className={`border px-2.5 py-1 rounded-full text-[10px] font-bold cursor-pointer shadow-md transition-colors ${
-              mapTileStyle === 'satellite'
-                ? 'bg-emerald-600 text-white border-emerald-600'
-                : 'bg-white hover:bg-slate-50 text-slate-700 border-slate-200'
-            }`}
-          >
-            {mapTileStyle === 'satellite' ? '🛰️ Satellite ON' : '🗺️ Satellite'}
-          </button>
-        </div>
-
-        {/* Right Side: Zoom & Locate Controls */}
-        <div className="flex items-center gap-1 bg-white border border-slate-200 rounded-full p-0.5 shadow-md pointer-events-auto">
           <button
             type="button"
             onClick={handleZoomIn}
             title="Zoom In"
-            className="w-6 h-6 flex items-center justify-center rounded-full hover:bg-slate-100 text-slate-700 text-xs font-bold cursor-pointer"
+            className="w-7 h-7 flex items-center justify-center hover:bg-slate-100 text-slate-700 text-xs font-bold border-b border-slate-100 cursor-pointer"
           >
             +
           </button>
@@ -988,17 +1029,9 @@ export const LiveMap: React.FC<LiveMapProps> = ({
             type="button"
             onClick={handleZoomOut}
             title="Zoom Out"
-            className="w-6 h-6 flex items-center justify-center rounded-full hover:bg-slate-100 text-slate-700 text-xs font-bold cursor-pointer"
+            className="w-7 h-7 flex items-center justify-center hover:bg-slate-100 text-slate-700 text-xs font-bold cursor-pointer"
           >
-            -
-          </button>
-          <button
-            type="button"
-            onClick={handleLocateMe}
-            title="Locate my current GPS position in Tamil Nadu"
-            className="w-6 h-6 flex items-center justify-center rounded-full hover:bg-red-50 text-red-600 text-[11px] font-bold cursor-pointer"
-          >
-            ◎
+            −
           </button>
         </div>
       </div>

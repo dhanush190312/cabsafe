@@ -1,4 +1,4 @@
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useRef } from 'react';
 import {
   MapPin,
   Navigation,
@@ -74,6 +74,74 @@ export const CaptainApp: React.FC<CaptainAppProps> = ({
   const [drawer, setDrawer] = useState<'none' | 'history' | 'profile'>('none');
   const [captainHistory, setCaptainHistory] = useState<RideRecord[]>([]);
   const [profileSavedMsg, setProfileSavedMsg] = useState<string | null>(null);
+
+  // Map drag & resize state
+  const [mapHeightPercent, setMapHeightPercent] = useState<number>(38);
+  const [isMapExpanded, setIsMapExpanded] = useState<boolean>(false);
+  const [isDraggingMap, setIsDraggingMap] = useState<boolean>(false);
+  const dragStartYRef = useRef<number>(0);
+  const startPercentRef = useRef<number>(38);
+
+  const handleDragStart = (e: React.MouseEvent) => {
+    e.preventDefault();
+    setIsDraggingMap(true);
+    dragStartYRef.current = e.clientY;
+    startPercentRef.current = isMapExpanded ? 76 : mapHeightPercent;
+
+    const onMouseMove = (moveEvent: MouseEvent) => {
+      const deltaY = moveEvent.clientY - dragStartYRef.current;
+      const totalH = window.innerHeight || 800;
+      const deltaPct = (deltaY / totalH) * 100;
+      const nextPct = Math.min(84, Math.max(20, startPercentRef.current + deltaPct));
+      setMapHeightPercent(nextPct);
+      if (nextPct >= 65) {
+        setIsMapExpanded(true);
+      } else {
+        setIsMapExpanded(false);
+      }
+    };
+
+    const onMouseUp = () => {
+      setIsDraggingMap(false);
+      window.removeEventListener('mousemove', onMouseMove);
+      window.removeEventListener('mouseup', onMouseUp);
+    };
+
+    window.addEventListener('mousemove', onMouseMove);
+    window.addEventListener('mouseup', onMouseUp);
+  };
+
+  const handleTouchStart = (e: React.TouchEvent) => {
+    const touch = e.touches[0];
+    if (!touch) return;
+    setIsDraggingMap(true);
+    dragStartYRef.current = touch.clientY;
+    startPercentRef.current = isMapExpanded ? 76 : mapHeightPercent;
+
+    const onTouchMove = (moveEvent: TouchEvent) => {
+      const currentTouch = moveEvent.touches[0];
+      if (!currentTouch) return;
+      const deltaY = currentTouch.clientY - dragStartYRef.current;
+      const totalH = window.innerHeight || 800;
+      const deltaPct = (deltaY / totalH) * 100;
+      const nextPct = Math.min(84, Math.max(20, startPercentRef.current + deltaPct));
+      setMapHeightPercent(nextPct);
+      if (nextPct >= 65) {
+        setIsMapExpanded(true);
+      } else {
+        setIsMapExpanded(false);
+      }
+    };
+
+    const onTouchEnd = () => {
+      setIsDraggingMap(false);
+      window.removeEventListener('touchmove', onTouchMove);
+      window.removeEventListener('touchend', onTouchEnd);
+    };
+
+    window.addEventListener('touchmove', onTouchMove);
+    window.addEventListener('touchend', onTouchEnd);
+  };
 
   useEffect(() => {
     if (captain) {
@@ -599,8 +667,13 @@ export const CaptainApp: React.FC<CaptainAppProps> = ({
         </div>
       </div>
 
-      {/* Primary Interactive Chennai Map Canvas */}
-      <div className="h-[38%] w-full relative shrink-0 overflow-hidden">
+      {/* Primary Interactive Map Canvas (Draggable & Expandable) */}
+      <div
+        style={{ height: `${isMapExpanded ? 76 : mapHeightPercent}%` }}
+        className={`w-full relative shrink-0 overflow-hidden ${
+          isDraggingMap ? '' : 'transition-all duration-200'
+        }`}
+      >
         <LiveMap
           pickupCoords={activeOrOffer?.pickupCoords || null}
           destinationCoords={activeOrOffer?.destinationCoords || null}
@@ -608,7 +681,20 @@ export const CaptainApp: React.FC<CaptainAppProps> = ({
           captainLabel={`YOU (${captain.vehicle.plate})`}
           routeGeometry={activeOrOffer?.routeGeometry || null}
           showFleetMarkers={false}
+          isExpanded={isMapExpanded}
+          onToggleExpand={() => setIsMapExpanded((prev) => !prev)}
         />
+      </div>
+
+      {/* Interactive Draggable Resize Bar (Extend / Collapse Map) */}
+      <div
+        onMouseDown={handleDragStart}
+        onTouchStart={handleTouchStart}
+        onDoubleClick={() => setIsMapExpanded((prev) => !prev)}
+        title="Drag up or down to resize/extend map (Double-click to toggle fullscreen)"
+        className="w-full h-4 bg-slate-100 hover:bg-red-50 border-y border-slate-200 cursor-row-resize flex items-center justify-center select-none shrink-0 group transition-colors"
+      >
+        <div className="w-10 h-1 rounded-full bg-slate-300 group-hover:bg-red-500 transition-colors" />
       </div>
 
       {/* Royal Bottom Sheet */}
