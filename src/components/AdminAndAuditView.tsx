@@ -145,7 +145,7 @@ export const AdminAndAuditView: React.FC<AdminAndAuditViewProps> = ({
           <div className="lg:col-span-7 bg-white border border-slate-200 rounded-2xl overflow-hidden min-h-[380px] flex flex-col shadow-xs">
             <div className="px-4 py-3 border-b border-slate-200 flex items-center justify-between bg-slate-50">
               <h2 className="text-sm font-bold text-slate-900">
-                Chennai Operating Zone &amp; Fleet Map (Provisional Dev Boundary)
+                Tamil Nadu Statewide &amp; Chennai Metro Fleet Telemetry (38 Districts)
               </h2>
               <span className="font-mono text-xs font-bold text-red-600">
                 {captains.length} Captains Tracked
@@ -523,11 +523,11 @@ export const AdminAndAuditView: React.FC<AdminAndAuditViewProps> = ({
         <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
           <div className="bg-white border border-slate-200 rounded-2xl p-5 space-y-2 shadow-xs">
             <h3 className="text-sm font-bold text-slate-900">
-              1. Authoritative Chennai Service-Area Boundary (`422 OUTSIDE_SERVICE_AREA`)
+              1. Authoritative Chennai &amp; Tamil Nadu Statewide Service-Area Boundaries (`422 OUTSIDE_SERVICE_AREA`)
             </h3>
             <p className="text-xs text-slate-600 leading-relaxed">
               <strong>Configuration (`/src/config/chennaiServiceArea.ts`):</strong>{' '}
-              Provisional development polygon centered at <code>13.0827°N, 80.2707°E</code> covering Chennai city, OMR (Perungudi, Thoraipakkam, Sholinganallur), and GST corridor through Tambaram.
+              Provisional development polygon centered at <code>13.0827°N, 80.2707°E</code> covering Chennai city, expanded to comprehensive statewide coverage across all 38 Tamil Nadu districts, including major highway corridors (NH44, NH45 GST, NH48/544, ECR, OMR) and premier regional hubs (Coimbatore, Madurai, Trichy, Salem, Tirunelveli, Kanyakumari).
             </p>
             <p className="text-xs text-emerald-700 font-medium">
               <strong>Enforcement:</strong> Validated on both the client and backend (<code>GET /rides/get-fare</code>, <code>POST /rides/create</code>, <code>POST /captains/location</code>, and Socket <code>update-location-captain</code>). Out-of-area points are never silently moved into Chennai.

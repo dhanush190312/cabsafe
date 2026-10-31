@@ -8,6 +8,17 @@ import {
   validateChennaiTripEndpoints,
   isValidCoordinatePair,
   ServiceAreaValidationResult,
+  TAMIL_NADU_MAP_CONFIG,
+  TAMIL_NADU_BORDER_POLYGON,
+  TAMIL_NADU_BOUNDING_BOX,
+  TAMIL_NADU_SERVICE_AREA_METADATA,
+  TAMIL_NADU_MAJOR_CITIES,
+  TAMIL_NADU_CORRIDORS,
+  MajorCityHub,
+  MajorCorridor,
+  isPointInTamilNaduServiceArea,
+  validateTamilNaduTripEndpoints,
+  getTamilNaduRegionLabel,
 } from '../config/chennaiServiceArea';
 
 export {
@@ -17,8 +28,17 @@ export {
   isPointInChennaiServiceArea,
   validateChennaiTripEndpoints,
   isValidCoordinatePair,
+  TAMIL_NADU_MAP_CONFIG,
+  TAMIL_NADU_BORDER_POLYGON,
+  TAMIL_NADU_BOUNDING_BOX,
+  TAMIL_NADU_SERVICE_AREA_METADATA,
+  TAMIL_NADU_MAJOR_CITIES,
+  TAMIL_NADU_CORRIDORS,
+  isPointInTamilNaduServiceArea,
+  validateTamilNaduTripEndpoints,
+  getTamilNaduRegionLabel,
 };
-export type { Coordinates, ServiceAreaValidationResult };
+export type { Coordinates, ServiceAreaValidationResult, MajorCityHub, MajorCorridor };
 
 export type VehicleType = 'car' | 'cng' | 'motorcycle';
 export type RideStatus = 'pending' | 'accepted' | 'ongoing' | 'completed' | 'cancelled';

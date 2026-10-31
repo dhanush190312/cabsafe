@@ -14,6 +14,11 @@ import {
   CHENNAI_MAP_CONFIG,
   CHENNAI_PROVISIONAL_POLYGON,
   CHENNAI_SERVICE_AREA_METADATA,
+  TAMIL_NADU_MAP_CONFIG,
+  TAMIL_NADU_BORDER_POLYGON,
+  TAMIL_NADU_SERVICE_AREA_METADATA,
+  TAMIL_NADU_MAJOR_CITIES,
+  TAMIL_NADU_CORRIDORS,
   isPointInChennaiServiceArea,
   validateChennaiTripEndpoints,
   isValidCoordinatePair,
@@ -620,7 +625,7 @@ async function startServer() {
   apiRouter.post('/captains/logout', authCaptain, handleCaptainLogout);
   apiRouter.get('/captains/logout', authCaptain, handleCaptainLogout);
 
-  // ---------------- Maps & Chennai Service-Area Routes (/maps/*) ----------------
+  // ---------------- Maps & Tamil Nadu / Chennai Service-Area Routes (/maps/*) ----------------
   apiRouter.get('/maps/service-area', (_req: Request, res: Response) => {
     res.status(200).json({
       mapConfig: CHENNAI_MAP_CONFIG,
@@ -628,7 +633,22 @@ async function startServer() {
       polygon: CHENNAI_PROVISIONAL_POLYGON,
       landmarks: URBAN_LANDMARKS,
       outsideReferenceLocations: OUTSIDE_CHENNAI_REFERENCE_LOCATIONS,
+      tamilNadu: {
+        mapConfig: TAMIL_NADU_MAP_CONFIG,
+        metadata: TAMIL_NADU_SERVICE_AREA_METADATA,
+        polygon: TAMIL_NADU_BORDER_POLYGON,
+        majorCities: TAMIL_NADU_MAJOR_CITIES,
+        corridors: TAMIL_NADU_CORRIDORS,
+      },
     });
+  });
+
+  apiRouter.get('/maps/tamil-nadu/cities', (_req: Request, res: Response) => {
+    res.status(200).json(TAMIL_NADU_MAJOR_CITIES);
+  });
+
+  apiRouter.get('/maps/tamil-nadu/corridors', (_req: Request, res: Response) => {
+    res.status(200).json(TAMIL_NADU_CORRIDORS);
   });
 
   apiRouter.get('/maps/landmarks', (_req: Request, res: Response) => {

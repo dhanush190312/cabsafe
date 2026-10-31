@@ -4,12 +4,16 @@ import {
   URBAN_LANDMARKS,
   OUTSIDE_CHENNAI_REFERENCE_LOCATIONS,
   CHENNAI_MAP_CONFIG,
+  TAMIL_NADU_MAP_CONFIG,
+  TAMIL_NADU_MAJOR_CITIES,
   calculateHaversineKm,
   interpolateRouteGeometry,
   isPointInChennaiServiceArea,
+  isPointInTamilNaduServiceArea,
   validateChennaiTripEndpoints,
   isValidCoordinatePair,
   formatChennaiReverseGeocodeLabel,
+  getTamilNaduRegionLabel,
 } from './domain';
 
 async function fetchWithTimeout(url: string, timeoutMs = 2600): Promise<Response> {
@@ -61,6 +65,24 @@ const KNOWN_OUTSIDE_CITIES: Record<string, Coordinates> = {
   hyderabad: { lat: 17.385, lon: 78.4867 },
   coimbatore: { lat: 11.0168, lon: 76.9558 },
   madurai: { lat: 9.9252, lon: 78.1198 },
+  trichy: { lat: 10.7905, lon: 78.7047 },
+  tiruchirappalli: { lat: 10.7905, lon: 78.7047 },
+  salem: { lat: 11.6643, lon: 78.1460 },
+  tirunelveli: { lat: 8.7139, lon: 77.7567 },
+  erode: { lat: 11.3410, lon: 77.7172 },
+  tiruppur: { lat: 11.1085, lon: 77.3411 },
+  thanjavur: { lat: 10.7870, lon: 79.1378 },
+  dindigul: { lat: 10.3673, lon: 77.9803 },
+  kanyakumari: { lat: 8.0883, lon: 77.5385 },
+  ooty: { lat: 11.4102, lon: 76.6950 },
+  udhagamandalam: { lat: 11.4102, lon: 76.6950 },
+  kodaikanal: { lat: 10.2381, lon: 77.4892 },
+  rameswaram: { lat: 9.2876, lon: 79.3129 },
+  hosur: { lat: 12.7409, lon: 77.8253 },
+  thoothukudi: { lat: 8.7642, lon: 78.1348 },
+  tuticorin: { lat: 8.7642, lon: 78.1348 },
+  cuddalore: { lat: 11.7480, lon: 79.7714 },
+  nagercoil: { lat: 8.1833, lon: 77.4119 },
   'san francisco': { lat: 37.7879, lon: -122.4075 },
 };
 
@@ -392,7 +414,24 @@ export async function getAutocompleteSuggestions(
       item.display_name.toLowerCase().includes(q)
   );
 
-  const combinedLocal = [...localChennaiMatches, ...outsideMatches];
+  const tnCityMatches: LandmarkSuggestion[] = TAMIL_NADU_MAJOR_CITIES.filter(
+    (c) =>
+      c.name.toLowerCase().includes(q) ||
+      c.district.toLowerCase().includes(q) ||
+      c.tagline.toLowerCase().includes(q)
+  ).map((c) => ({
+    name: c.name,
+    city: `${c.district}, Tamil Nadu`,
+    country: 'India',
+    lat: c.lat,
+    lon: c.lon,
+    display_name: `${c.name}, ${c.district} District, Tamil Nadu`,
+    placeId: `tn-${c.id}`,
+    category: c.tagline,
+    inServiceArea: isPointInChennaiServiceArea({ lat: c.lat, lon: c.lon }),
+  }));
+
+  const combinedLocal = [...localChennaiMatches, ...outsideMatches, ...tnCityMatches];
   if (combinedLocal.length >= 5) {
     return combinedLocal.slice(0, 8);
   }

@@ -40,7 +40,10 @@ import {
   setStoredToken,
   clearStoredToken,
   isPointInChennaiServiceArea,
+  isPointInTamilNaduServiceArea,
   validateChennaiTripEndpoints,
+  validateTamilNaduTripEndpoints,
+  getTamilNaduRegionLabel,
 } from '../types';
 import { LiveMap } from './LiveMap';
 import { TopDownCarSvg } from './TopDownCarSvg';
@@ -332,9 +335,12 @@ export const PassengerApp: React.FC<PassengerAppProps> = ({
     }
 
     if (effectivePickupCoords && effectiveDestCoords) {
-      const check = validateChennaiTripEndpoints(effectivePickupCoords, effectiveDestCoords);
-      if (!check.valid) {
-        setBookingError(check.message || 'Location is outside the Chennai service area.');
+      const checkChennai = validateChennaiTripEndpoints(effectivePickupCoords, effectiveDestCoords);
+      const checkTN = validateTamilNaduTripEndpoints(effectivePickupCoords, effectiveDestCoords);
+      if (!checkChennai.valid && !checkTN.valid) {
+        setBookingError(
+          checkTN.message || 'Location is outside the supported Tamil Nadu service area.'
+        );
         return;
       }
     }
@@ -453,7 +459,10 @@ export const PassengerApp: React.FC<PassengerAppProps> = ({
     setGpsStatusNotice(null);
     setFareEstimate(null);
 
-    const inside = isPointInChennaiServiceArea(coords);
+    const inChennai = isPointInChennaiServiceArea(coords);
+    const inTN = isPointInTamilNaduServiceArea(coords);
+    const regionLabel = getTamilNaduRegionLabel(coords);
+
     if (targetField === 'pickup') {
       setPickupCoords(coords);
       if (!destinationCoords) setActiveField('destination');
@@ -477,29 +486,31 @@ export const PassengerApp: React.FC<PassengerAppProps> = ({
         setDestination(rev.display_name);
         setDestinationCoords(rev.coords);
       }
-      if (!rev.inServiceArea) {
+      if (!rev.inServiceArea && !inTN) {
         setBookingError(
           `Selected ${targetField === 'pickup' ? 'pick-up' : 'drop-off'} point (${coords.lat.toFixed(
             4
-          )}, ${coords.lon.toFixed(4)}) is outside the supported Chennai operating boundary.`
+          )}, ${coords.lon.toFixed(4)}) is outside the supported Tamil Nadu operating boundary.`
         );
       }
     } catch {
-      const fallbackLabel = inside
+      const fallbackLabel = inChennai
         ? `Chennai Pinned Location (${coords.lat.toFixed(4)}, ${coords.lon.toFixed(4)})`
-        : `Pinned Point (${coords.lat.toFixed(4)}, ${coords.lon.toFixed(
-            4
-          )}) — Outside Chennai Service Boundary`;
+        : inTN
+          ? `${regionLabel} (${coords.lat.toFixed(4)}, ${coords.lon.toFixed(4)})`
+          : `Pinned Point (${coords.lat.toFixed(4)}, ${coords.lon.toFixed(
+              4
+            )}) — Outside Tamil Nadu`;
       if (targetField === 'pickup') {
         setPickup(fallbackLabel);
       } else {
         setDestination(fallbackLabel);
       }
-      if (!inside) {
+      if (!inChennai && !inTN) {
         setBookingError(
           `Selected ${targetField === 'pickup' ? 'pick-up' : 'drop-off'} point (${coords.lat.toFixed(
             4
-          )}, ${coords.lon.toFixed(4)}) is outside the supported Chennai operating boundary.`
+          )}, ${coords.lon.toFixed(4)}) is outside the supported Tamil Nadu operating boundary.`
         );
       }
     }

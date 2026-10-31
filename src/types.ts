@@ -12,18 +12,36 @@ import {
   CHENNAI_MAP_CONFIG,
   CHENNAI_PROVISIONAL_POLYGON,
   CHENNAI_SERVICE_AREA_METADATA,
+  TAMIL_NADU_MAP_CONFIG,
+  TAMIL_NADU_BORDER_POLYGON,
+  TAMIL_NADU_SERVICE_AREA_METADATA,
+  TAMIL_NADU_MAJOR_CITIES,
+  TAMIL_NADU_CORRIDORS,
+  MajorCityHub,
+  MajorCorridor,
   isPointInChennaiServiceArea,
+  isPointInTamilNaduServiceArea,
   validateChennaiTripEndpoints,
+  validateTamilNaduTripEndpoints,
   isValidCoordinatePair,
+  getTamilNaduRegionLabel,
 } from './config/chennaiServiceArea';
 
 export {
   CHENNAI_MAP_CONFIG,
   CHENNAI_PROVISIONAL_POLYGON,
   CHENNAI_SERVICE_AREA_METADATA,
+  TAMIL_NADU_MAP_CONFIG,
+  TAMIL_NADU_BORDER_POLYGON,
+  TAMIL_NADU_SERVICE_AREA_METADATA,
+  TAMIL_NADU_MAJOR_CITIES,
+  TAMIL_NADU_CORRIDORS,
   isPointInChennaiServiceArea,
+  isPointInTamilNaduServiceArea,
   validateChennaiTripEndpoints,
+  validateTamilNaduTripEndpoints,
   isValidCoordinatePair,
+  getTamilNaduRegionLabel,
 };
 
 export type {
@@ -35,6 +53,8 @@ export type {
   VehicleType,
   MatchExplanation,
   ServiceAreaValidationResult,
+  MajorCityHub,
+  MajorCorridor,
 };
 
 export type WorkspaceTab = 'passenger' | 'captain' | 'admin' | 'audit';
