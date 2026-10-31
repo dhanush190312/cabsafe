@@ -101,6 +101,9 @@ export interface MatchExplanation {
     vehicle: ScoreComponent;
   };
   explanation: string;
+  highlights?: string[];
+  matchTier?: 'Top Pick' | 'Optimal Match' | 'Alternative Match';
+  confidencePercent?: number;
 }
 
 export interface RideRecord {
@@ -585,12 +588,23 @@ export function rankCaptainsExplainably(
 
     const etaMinutes = Math.max(1, Math.round((distanceKm / 26) * 60 + 1));
     const captainName = `${captain.fullname.firstname} ${captain.fullname.lastname || ''}`.trim();
+    const vehicleModel = captain.vehicle.model || capType;
+    const matchTier: 'Top Pick' | 'Optimal Match' | 'Alternative Match' =
+      finalScore >= 70 ? 'Top Pick' : finalScore >= 55 ? 'Optimal Match' : 'Alternative Match';
+    const confidencePercent = Math.min(99, Math.max(50, Math.round(finalScore * 1.15)));
+
+    const highlights: string[] = [
+      rawRating >= 4.8 ? `Top-rated Captain (${rawRating.toFixed(1)}★)` : `${rawRating.toFixed(1)}★ Rating`,
+      `${Math.round(sCompletion * 100)}% Trip Reliability`,
+      vehicleModel ? `${vehicleModel} (${String(capType).toUpperCase()})` : `${String(capType).toUpperCase()} Tier`,
+      distanceKm <= 5.0 ? `Fast Pickup (${distanceKm.toFixed(1)} km · ${etaMinutes}m)` : `${distanceKm.toFixed(1)} km Proximity`,
+    ];
 
     ranked.push({
       captainId: captain._id,
       captainName,
       vehicleType: capType,
-      vehicleModel: captain.vehicle.model || capType,
+      vehicleModel,
       vehicleColor: captain.vehicle.color,
       plate: captain.vehicle.plate,
       rating: rawRating,
@@ -599,6 +613,9 @@ export function rankCaptainsExplainably(
       etaMinutes,
       finalScore,
       driverFare,
+      matchTier,
+      confidencePercent,
+      highlights,
       scoreBreakdown: {
         distance: {
           raw: `${distanceKm.toFixed(2)} km`,

@@ -8,6 +8,9 @@ import {
   PlusCircle,
   Scale,
   X,
+  ShieldCheck,
+  Sparkles,
+  Check,
 } from 'lucide-react';
 import type { RideRecord, MatchExplanation } from '../types';
 
@@ -153,54 +156,167 @@ export const SimulationCard: React.FC<SimulationCardProps> = ({
         </div>
 
         {explanation ? (
-          <div className="bg-slate-50 border border-slate-200 rounded-xl p-3 space-y-2">
-            <div className="flex items-center justify-between">
-              <div>
-                <p className="text-xs font-bold text-slate-900">
-                  {explanation.captainName} · {explanation.plate}
-                </p>
-                <p className="text-[11px] text-slate-500 font-medium">
-                  {explanation.distanceKm} km away · ETA {explanation.etaMinutes} mins
-                </p>
+          <div className="bg-slate-50 border border-slate-200 rounded-2xl p-3.5 space-y-3 shadow-xs">
+            {/* Captain Hero & Match Score Header */}
+            <div className="flex items-start justify-between gap-2.5 pb-2 border-b border-slate-200">
+              <div className="flex items-center gap-2.5 min-w-0">
+                <div className="relative">
+                  <div className="w-10 h-10 rounded-full bg-slate-900 text-white font-black text-xs flex items-center justify-center shadow-xs">
+                    {explanation.captainName.slice(0, 2).toUpperCase()}
+                  </div>
+                  <span className="absolute bottom-0 right-0 w-3 h-3 rounded-full bg-emerald-500 border-2 border-white" title="Online & Active" />
+                </div>
+                <div className="min-w-0">
+                  <div className="flex items-center gap-1.5 flex-wrap">
+                    <p className="text-xs font-black text-slate-900 truncate">
+                      {explanation.captainName}
+                    </p>
+                    <span className="inline-flex items-center gap-0.5 text-[9px] bg-emerald-100 text-emerald-800 font-bold px-1.5 py-0.2 rounded-full border border-emerald-200">
+                      <ShieldCheck className="w-2.5 h-2.5" />
+                      Verified Captain
+                    </span>
+                  </div>
+                  <p className="text-[11px] text-slate-600 font-semibold truncate flex items-center gap-1">
+                    <span>{explanation.vehicleModel || explanation.vehicleType.toUpperCase()}</span>
+                    <span className="font-mono text-[9px] bg-slate-200 text-slate-800 px-1 rounded">
+                      {explanation.plate}
+                    </span>
+                  </p>
+                  <p className="text-[10px] text-slate-400 font-medium">
+                    {explanation.distanceKm} km away · ETA {explanation.etaMinutes} mins
+                  </p>
+                </div>
               </div>
-              <div className="text-right font-mono">
-                <span className="text-sm font-extrabold text-red-600 tabular-nums">
-                  {explanation.finalScore.toFixed(1)}
-                </span>
-                <span className="text-[10px] text-slate-400 font-bold"> / 100</span>
+
+              <div className="text-right shrink-0">
+                <div className="inline-flex flex-col items-end">
+                  <div className="flex items-baseline gap-0.5 font-mono">
+                    <span className="text-base font-black text-red-600 tabular-nums">
+                      {explanation.finalScore.toFixed(1)}
+                    </span>
+                    <span className="text-[10px] text-slate-400 font-bold">/100</span>
+                  </div>
+                  <span className="text-[9px] font-bold text-red-700 bg-red-100 px-1.5 py-0.2 rounded-full">
+                    {explanation.matchTier || 'Top Pick'}
+                  </span>
+                </div>
               </div>
             </div>
 
-            <div className="grid grid-cols-2 gap-1.5 text-[11px] font-mono">
-              <div className="bg-white px-2.5 py-1.5 rounded-lg border border-slate-200 flex justify-between shadow-2xs">
-                <span className="text-slate-500">Dist (45%):</span>
-                <span className="text-slate-800 font-bold tabular-nums">
-                  +{explanation.scoreBreakdown.distance.weighted.toFixed(1)}
-                </span>
+            {/* 4 Multi-Factor Score Weight Breakdowns with Visual Progress Bars */}
+            <div className="grid grid-cols-2 gap-2 text-[10px]">
+              {/* Proximity */}
+              <div className="bg-white p-2 rounded-xl border border-slate-200 space-y-1 shadow-2xs">
+                <div className="flex justify-between items-center text-slate-500 font-medium">
+                  <span>Proximity (45%)</span>
+                  <span className="font-mono font-bold text-slate-900 tabular-nums">
+                    +{explanation.scoreBreakdown.distance.weighted.toFixed(1)}
+                  </span>
+                </div>
+                <div className="w-full h-1.5 bg-slate-100 rounded-full overflow-hidden">
+                  <div
+                    className="h-full bg-red-600 rounded-full transition-all duration-300"
+                    style={{ width: `${Math.min(100, (explanation.scoreBreakdown.distance.weighted / 45) * 100)}%` }}
+                  />
+                </div>
+                <div className="text-[9px] text-slate-400 truncate">
+                  {explanation.distanceKm} km away ({explanation.etaMinutes}m ETA)
+                </div>
               </div>
-              <div className="bg-white px-2.5 py-1.5 rounded-lg border border-slate-200 flex justify-between shadow-2xs">
-                <span className="text-slate-500">Rating (25%):</span>
-                <span className="text-slate-800 font-bold tabular-nums">
-                  +{explanation.scoreBreakdown.rating.weighted.toFixed(1)}
-                </span>
+
+              {/* Rating */}
+              <div className="bg-white p-2 rounded-xl border border-slate-200 space-y-1 shadow-2xs">
+                <div className="flex justify-between items-center text-slate-500 font-medium">
+                  <span>Rider Rating (25%)</span>
+                  <span className="font-mono font-bold text-slate-900 tabular-nums">
+                    +{explanation.scoreBreakdown.rating.weighted.toFixed(1)}
+                  </span>
+                </div>
+                <div className="w-full h-1.5 bg-slate-100 rounded-full overflow-hidden">
+                  <div
+                    className="h-full bg-amber-500 rounded-full transition-all duration-300"
+                    style={{ width: `${Math.min(100, (explanation.scoreBreakdown.rating.weighted / 25) * 100)}%` }}
+                  />
+                </div>
+                <div className="text-[9px] text-slate-400 truncate">
+                  ★ {explanation.rating?.toFixed(1) ?? '4.9'} (98% Satisfaction)
+                </div>
               </div>
-              <div className="bg-white px-2.5 py-1.5 rounded-lg border border-slate-200 flex justify-between shadow-2xs">
-                <span className="text-slate-500">Reliab (20%):</span>
-                <span className="text-slate-800 font-bold tabular-nums">
-                  +{explanation.scoreBreakdown.completion.weighted.toFixed(1)}
-                </span>
+
+              {/* Reliability */}
+              <div className="bg-white p-2 rounded-xl border border-slate-200 space-y-1 shadow-2xs">
+                <div className="flex justify-between items-center text-slate-500 font-medium">
+                  <span>Reliability (20%)</span>
+                  <span className="font-mono font-bold text-slate-900 tabular-nums">
+                    +{explanation.scoreBreakdown.completion.weighted.toFixed(1)}
+                  </span>
+                </div>
+                <div className="w-full h-1.5 bg-slate-100 rounded-full overflow-hidden">
+                  <div
+                    className="h-full bg-emerald-600 rounded-full transition-all duration-300"
+                    style={{ width: `${Math.min(100, (explanation.scoreBreakdown.completion.weighted / 20) * 100)}%` }}
+                  />
+                </div>
+                <div className="text-[9px] text-slate-400 truncate">
+                  {explanation.scoreBreakdown.completion.raw} trip completion
+                </div>
               </div>
-              <div className="bg-white px-2.5 py-1.5 rounded-lg border border-slate-200 flex justify-between shadow-2xs">
-                <span className="text-slate-500">Vehicle (10%):</span>
-                <span className="text-slate-800 font-bold tabular-nums">
-                  +{explanation.scoreBreakdown.vehicle.weighted.toFixed(1)}
-                </span>
+
+              {/* Vehicle Fit */}
+              <div className="bg-white p-2 rounded-xl border border-slate-200 space-y-1 shadow-2xs">
+                <div className="flex justify-between items-center text-slate-500 font-medium">
+                  <span>Vehicle Fit (10%)</span>
+                  <span className="font-mono font-bold text-slate-900 tabular-nums">
+                    +{explanation.scoreBreakdown.vehicle.weighted.toFixed(1)}
+                  </span>
+                </div>
+                <div className="w-full h-1.5 bg-slate-100 rounded-full overflow-hidden">
+                  <div
+                    className="h-full bg-blue-600 rounded-full transition-all duration-300"
+                    style={{ width: `${Math.min(100, (explanation.scoreBreakdown.vehicle.weighted / 10) * 100)}%` }}
+                  />
+                </div>
+                <div className="text-[9px] text-slate-400 truncate">
+                  {explanation.vehicleType.toUpperCase()} exact tier match
+                </div>
               </div>
             </div>
 
-            <p className="text-[11px] text-slate-600 leading-relaxed font-medium">
-              {explanation.explanation}
-            </p>
+            {/* AI Dispatch Explanation & Feature Tags */}
+            <div className="bg-white rounded-xl p-2.5 border border-slate-200 space-y-2">
+              <div className="flex items-center justify-between text-[10px]">
+                <span className="font-bold text-slate-800 flex items-center gap-1">
+                  <Sparkles className="w-3 h-3 text-red-600" />
+                  <span>Explainable Dispatch Rationale</span>
+                </span>
+                {explanation.driverFare && (
+                  <span className="font-mono font-black text-red-600">
+                    ₹{explanation.driverFare.toFixed(2)}
+                  </span>
+                )}
+              </div>
+              <p className="text-[11px] text-slate-600 leading-relaxed font-medium">
+                {explanation.explanation}
+              </p>
+
+              {/* Pro Feature Tags */}
+              <div className="flex items-center gap-1 flex-wrap pt-1 border-t border-slate-100">
+                {(explanation.highlights || [
+                  `★ ${explanation.rating?.toFixed(1) ?? '4.9'} Star Rating`,
+                  `${explanation.vehicleModel || explanation.vehicleType}`,
+                  `${explanation.distanceKm} km Proximity`,
+                  '₹0 Cancellation Guarantee',
+                ]).map((hl, i) => (
+                  <span
+                    key={i}
+                    className="text-[9px] bg-slate-100 text-slate-700 px-2 py-0.5 rounded-md font-semibold flex items-center gap-1"
+                  >
+                    <Check className="w-2.5 h-2.5 text-emerald-600 stroke-[3]" />
+                    {hl}
+                  </span>
+                ))}
+              </div>
+            </div>
           </div>
         ) : (
           <p className="text-xs text-slate-500">

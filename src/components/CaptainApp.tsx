@@ -919,30 +919,51 @@ export const CaptainApp: React.FC<CaptainAppProps> = ({
 
                 {/* Match Score Intelligence Breakdown */}
                 {primaryOffer.matchExplanation && (
-                  <div className="bg-[#1C2029] rounded-2xl p-2.5 text-xs space-y-1.5 border border-white/10">
+                  <div className="bg-[#1C2029] rounded-2xl p-3 text-xs space-y-2 border border-white/10 shadow-xs">
                     <div className="flex items-center justify-between font-semibold text-white">
                       <span className="flex items-center gap-1.5">
-                        <ShieldCheck className="w-3.5 h-3.5 text-[#E2FF44]" />
-                        <span className="font-bold">CabSafe Match Score</span>
+                        <ShieldCheck className="w-4 h-4 text-[#E2FF44]" />
+                        <span className="font-bold text-xs tracking-tight">Why You Were Dispatched</span>
                       </span>
-                      <span className="font-mono text-[#E2FF44] font-extrabold">
-                        {primaryOffer.matchExplanation.finalScore} / 100
-                      </span>
+                      <div className="flex items-center gap-1">
+                        <span className="text-[10px] bg-[#E2FF44]/20 text-[#E2FF44] font-bold px-2 py-0.5 rounded-full border border-[#E2FF44]/30">
+                          {primaryOffer.matchExplanation.matchTier || 'Top Pick'}
+                        </span>
+                        <span className="font-mono text-sm text-[#E2FF44] font-black">
+                          {primaryOffer.matchExplanation.finalScore.toFixed(1)}
+                        </span>
+                        <span className="text-[10px] text-slate-400 font-bold">/100</span>
+                      </div>
                     </div>
-                    <p className="text-[10px] text-slate-300 leading-snug">
-                      {primaryOffer.matchExplanation.explanation}
+
+                    <p className="text-[11px] text-slate-300 leading-snug">
+                      You are the #1 ranked captain for this corridor based on your {primaryOffer.matchExplanation.distanceKm} km proximity, {primaryOffer.matchExplanation.rating?.toFixed(1) ?? '4.9'}★ rating, and stellar {primaryOffer.matchExplanation.scoreBreakdown?.completion?.raw || '96%'} completion record.
                     </p>
-                    <div className="grid grid-cols-2 gap-1 text-[9px] font-mono pt-0.5">
-                      <div className="bg-[#0D0F14] px-2 py-0.5 rounded border border-white/5 flex justify-between">
-                        <span className="text-slate-400">Proximity (45%):</span>
+
+                    {/* 4 Factor Matrix */}
+                    <div className="grid grid-cols-2 gap-1.5 text-[10px] font-mono pt-1">
+                      <div className="bg-[#0D0F14] px-2.5 py-1.5 rounded-xl border border-white/5 flex justify-between items-center">
+                        <span className="text-slate-400 font-sans">Proximity (45%):</span>
                         <span className="text-[#E2FF44] font-bold">
-                          {primaryOffer.matchExplanation.distanceKm} km
+                          +{primaryOffer.matchExplanation.scoreBreakdown?.distance?.weighted?.toFixed(1) ?? '14.3'} pts
                         </span>
                       </div>
-                      <div className="bg-[#0D0F14] px-2 py-0.5 rounded border border-white/5 flex justify-between">
-                        <span className="text-slate-400">Rating (25%):</span>
+                      <div className="bg-[#0D0F14] px-2.5 py-1.5 rounded-xl border border-white/5 flex justify-between items-center">
+                        <span className="text-slate-400 font-sans">Rating (25%):</span>
                         <span className="text-[#E2FF44] font-bold">
-                          {primaryOffer.matchExplanation.rating?.toFixed(1) ?? '4.9'} ★
+                          +{primaryOffer.matchExplanation.scoreBreakdown?.rating?.weighted?.toFixed(1) ?? '24.6'} pts
+                        </span>
+                      </div>
+                      <div className="bg-[#0D0F14] px-2.5 py-1.5 rounded-xl border border-white/5 flex justify-between items-center">
+                        <span className="text-slate-400 font-sans">Reliability (20%):</span>
+                        <span className="text-[#E2FF44] font-bold">
+                          +{primaryOffer.matchExplanation.scoreBreakdown?.completion?.weighted?.toFixed(1) ?? '19.2'} pts
+                        </span>
+                      </div>
+                      <div className="bg-[#0D0F14] px-2.5 py-1.5 rounded-xl border border-white/5 flex justify-between items-center">
+                        <span className="text-slate-400 font-sans">Vehicle (10%):</span>
+                        <span className="text-[#E2FF44] font-bold">
+                          +{primaryOffer.matchExplanation.scoreBreakdown?.vehicle?.weighted?.toFixed(1) ?? '10.0'} pts
                         </span>
                       </div>
                     </div>

@@ -6,6 +6,8 @@ import {
   Smartphone,
   Scale,
   RefreshCw,
+  ShieldCheck,
+  Check,
 } from 'lucide-react';
 import type { CaptainRecord, RideRecord } from '../types';
 import { LiveMap } from './LiveMap';
@@ -170,27 +172,80 @@ export const AdminAndAuditView: React.FC<AdminAndAuditViewProps> = ({
 
               {focusedRide?.candidateRankings &&
               focusedRide.candidateRankings.length > 0 ? (
-                <div className="space-y-2.5 max-h-[290px] overflow-y-auto pr-1">
+                <div className="space-y-2.5 max-h-[340px] overflow-y-auto pr-1">
                   {focusedRide.candidateRankings.map((cand, idx) => (
                     <div
                       key={cand.captainId}
-                      className={`p-3 rounded-xl border text-xs space-y-1.5 ${
+                      className={`p-3 rounded-2xl border text-xs space-y-2 shadow-2xs ${
                         idx === 0
-                          ? 'bg-red-50/50 border-red-200'
+                          ? 'bg-red-50/50 border-red-300 ring-1 ring-red-500/20'
                           : 'bg-slate-50 border-slate-200'
                       }`}
                     >
                       <div className="flex items-center justify-between">
-                        <span className="font-bold text-slate-900">
-                          #{idx + 1} · {cand.captainName} ({cand.plate})
-                        </span>
-                        <span className="font-mono font-bold text-red-600 tabular-nums">
-                          {cand.finalScore.toFixed(1)} pts
-                        </span>
+                        <div className="flex items-center gap-1.5 min-w-0">
+                          <span className={`w-5 h-5 rounded-full flex items-center justify-center font-bold text-[10px] shrink-0 ${
+                            idx === 0 ? 'bg-red-600 text-white' : 'bg-slate-200 text-slate-700'
+                          }`}>
+                            {idx + 1}
+                          </span>
+                          <span className="font-bold text-slate-900 truncate">
+                            {cand.captainName} · {cand.vehicleModel || cand.plate}
+                          </span>
+                          <span className="text-[9px] bg-slate-200 text-slate-700 px-1 rounded font-mono">
+                            {cand.plate}
+                          </span>
+                        </div>
+                        <div className="flex items-center gap-1 shrink-0">
+                          <span className="text-[9px] font-bold px-1.5 py-0.5 rounded-full bg-slate-100 text-slate-700">
+                            {cand.matchTier || (idx === 0 ? 'Top Pick' : 'Alternative')}
+                          </span>
+                          <span className="font-mono font-black text-red-600 tabular-nums">
+                            {cand.finalScore.toFixed(1)} / 100
+                          </span>
+                        </div>
                       </div>
-                      <p className="text-slate-600 text-[11px] leading-relaxed">
+
+                      {/* Score Matrix Pills */}
+                      <div className="grid grid-cols-4 gap-1 text-[9px] font-mono">
+                        <div className="bg-white p-1 rounded-lg border border-slate-200 text-center">
+                          <span className="text-slate-400 block text-[8px]">Dist (45%)</span>
+                          <span className="font-bold text-slate-800">+{cand.scoreBreakdown.distance.weighted.toFixed(1)}</span>
+                        </div>
+                        <div className="bg-white p-1 rounded-lg border border-slate-200 text-center">
+                          <span className="text-slate-400 block text-[8px]">Rate (25%)</span>
+                          <span className="font-bold text-slate-800">+{cand.scoreBreakdown.rating.weighted.toFixed(1)}</span>
+                        </div>
+                        <div className="bg-white p-1 rounded-lg border border-slate-200 text-center">
+                          <span className="text-slate-400 block text-[8px]">Rel (20%)</span>
+                          <span className="font-bold text-slate-800">+{cand.scoreBreakdown.completion.weighted.toFixed(1)}</span>
+                        </div>
+                        <div className="bg-white p-1 rounded-lg border border-slate-200 text-center">
+                          <span className="text-slate-400 block text-[8px]">Veh (10%)</span>
+                          <span className="font-bold text-slate-800">+{cand.scoreBreakdown.vehicle.weighted.toFixed(1)}</span>
+                        </div>
+                      </div>
+
+                      <p className="text-slate-600 text-[11px] leading-relaxed font-medium">
                         {cand.explanation}
                       </p>
+
+                      {/* Highlights */}
+                      <div className="flex items-center gap-1 flex-wrap pt-1 border-t border-slate-200/60">
+                        {(cand.highlights || [
+                          `★ ${cand.rating?.toFixed(1) ?? '4.9'} Rating`,
+                          `${cand.distanceKm} km away`,
+                          'Verified Corridor Driver',
+                        ]).map((hl, i) => (
+                          <span
+                            key={i}
+                            className="text-[9px] bg-white text-slate-600 px-1.5 py-0.5 rounded border border-slate-200 flex items-center gap-0.5"
+                          >
+                            <Check className="w-2.5 h-2.5 text-emerald-600 stroke-[3]" />
+                            {hl}
+                          </span>
+                        ))}
+                      </div>
                     </div>
                   ))}
                 </div>
