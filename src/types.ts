@@ -44,6 +44,38 @@ export {
   getTamilNaduRegionLabel,
 };
 
+/**
+ * Accurately formats distance in meters into human-readable text.
+ * e.g., 650 -> "650 m", 5300 -> "5.3 km", 12450 -> "12.5 km"
+ */
+export function formatDistanceText(meters: number): string {
+  if (meters < 1000) {
+    return `${Math.max(100, Math.round(meters))} m`;
+  }
+  const km = meters / 1000;
+  return `${km.toFixed(1)} km`;
+}
+
+/**
+ * Accurately formats duration in seconds into human-readable text.
+ * e.g., 45 -> "< 1 min", 720 -> "12 mins", 3900 -> "1 hr 5 mins", 7200 -> "2 hrs"
+ */
+export function formatDurationText(seconds: number): string {
+  if (seconds < 60) {
+    return '< 1 min';
+  }
+  const totalMinutes = Math.round(seconds / 60);
+  if (totalMinutes < 60) {
+    return `${totalMinutes} mins`;
+  }
+  const hours = Math.floor(totalMinutes / 60);
+  const remainingMins = totalMinutes % 60;
+  if (remainingMins === 0) {
+    return `${hours} ${hours === 1 ? 'hr' : 'hrs'}`;
+  }
+  return `${hours} ${hours === 1 ? 'hr' : 'hrs'} ${remainingMins} mins`;
+}
+
 export type {
   UserRecord,
   CaptainRecord,

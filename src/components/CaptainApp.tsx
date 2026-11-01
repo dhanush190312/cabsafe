@@ -22,7 +22,13 @@ import type {
   VehicleType,
   Coordinates,
 } from '../types';
-import { apiRequest, setStoredToken, clearStoredToken } from '../types';
+import {
+  apiRequest,
+  setStoredToken,
+  clearStoredToken,
+  formatDistanceText,
+  formatDurationText,
+} from '../types';
 import { LiveMap } from './LiveMap';
 import { TopDownCarSvg } from './TopDownCarSvg';
 
@@ -680,6 +686,8 @@ export const CaptainApp: React.FC<CaptainAppProps> = ({
           captainCoords={captainCoords}
           captainLabel={`YOU (${captain.vehicle.plate})`}
           routeGeometry={activeOrOffer?.routeGeometry || null}
+          routeDistanceText={activeOrOffer?.distance ? formatDistanceText(activeOrOffer.distance) : null}
+          routeDurationText={activeOrOffer?.duration ? formatDurationText(activeOrOffer.duration) : null}
           showFleetMarkers={false}
           isExpanded={isMapExpanded}
           onToggleExpand={() => setIsMapExpanded((prev) => !prev)}
@@ -738,7 +746,13 @@ export const CaptainApp: React.FC<CaptainAppProps> = ({
                 <div className="flex justify-between text-slate-300">
                   <span>Trip Distance</span>
                   <span className="font-mono font-bold text-white">
-                    {(completedTripSummary.distance / 1000).toFixed(2)} km
+                    {formatDistanceText(completedTripSummary.distance)}
+                  </span>
+                </div>
+                <div className="flex justify-between text-slate-300">
+                  <span>Trip Duration</span>
+                  <span className="font-mono font-bold text-white">
+                    {formatDurationText(completedTripSummary.duration)}
                   </span>
                 </div>
                 <div className="flex justify-between text-slate-300">
@@ -964,10 +978,13 @@ export const CaptainApp: React.FC<CaptainAppProps> = ({
 
                       <div className="text-right shrink-0">
                         <span className="text-[9px] font-bold text-slate-400 uppercase tracking-wider block">
-                          Distance
+                          Distance & ETA
                         </span>
-                        <span className="font-mono text-xs font-extrabold text-[#E2FF44]">
-                          {(primaryOffer.distance / 1000).toFixed(1)} km
+                        <span className="font-mono text-xs font-extrabold text-[#E2FF44] block">
+                          {formatDistanceText(primaryOffer.distance)}
+                        </span>
+                        <span className="text-[10px] text-slate-400 font-medium block">
+                          ~{formatDurationText(primaryOffer.duration)}
                         </span>
                       </div>
                     </div>
@@ -1205,6 +1222,11 @@ export const CaptainApp: React.FC<CaptainAppProps> = ({
                   <div className="flex justify-between font-bold text-white">
                     <span className="uppercase text-[#E2FF44]">{item.status}</span>
                     <span className="font-mono tabular-nums">₹{item.fare.toFixed(2)}</span>
+                  </div>
+                  <div className="flex items-center gap-2 text-[10px] text-slate-400 font-mono">
+                    <span>{formatDistanceText(item.distance)}</span>
+                    <span>•</span>
+                    <span>{formatDurationText(item.duration)}</span>
                   </div>
                   <p className="text-slate-300 truncate">Pickup: {item.pickup}</p>
                   <p className="text-slate-300 truncate">Dropoff: {item.destination}</p>

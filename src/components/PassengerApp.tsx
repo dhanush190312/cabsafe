@@ -44,6 +44,8 @@ import {
   validateChennaiTripEndpoints,
   validateTamilNaduTripEndpoints,
   getTamilNaduRegionLabel,
+  formatDistanceText,
+  formatDurationText,
 } from '../types';
 import { LiveMap } from './LiveMap';
 import { TopDownCarSvg } from './TopDownCarSvg';
@@ -1055,11 +1057,11 @@ export const PassengerApp: React.FC<PassengerAppProps> = ({
           routeGeometry={mapGeometry}
           routeDistanceText={
             fareEstimate?.distance?.text ||
-            (activeRide?.distance ? `${(activeRide.distance / 1000).toFixed(1)} km` : null)
+            (activeRide?.distance ? formatDistanceText(activeRide.distance) : null)
           }
           routeDurationText={
             fareEstimate?.duration?.text ||
-            (activeRide?.duration ? `${Math.ceil(activeRide.duration / 60)} mins` : null)
+            (activeRide?.duration ? formatDurationText(activeRide.duration) : null)
           }
           showFleetMarkers={false}
           onMapClick={handleMapClickSelect}
@@ -1154,7 +1156,7 @@ export const PassengerApp: React.FC<PassengerAppProps> = ({
               </div>
               <div className="flex justify-between text-slate-500">
                 <span>
-                  Distance ({(completedRideToRate.distance / 1000).toFixed(2)} km)
+                  Distance ({formatDistanceText(completedRideToRate.distance)})
                 </span>
                 <span className="font-mono text-slate-900 font-semibold tabular-nums">
                   ₹{completedRideToRate.fareBreakdown?.distanceFare.toFixed(2) || '95.58'}
@@ -1162,7 +1164,7 @@ export const PassengerApp: React.FC<PassengerAppProps> = ({
               </div>
               <div className="flex justify-between text-slate-500">
                 <span>
-                  Duration ({Math.max(1, Math.round(completedRideToRate.duration / 60))} mins)
+                  Duration ({formatDurationText(completedRideToRate.duration)})
                 </span>
                 <span className="font-mono text-slate-900 font-semibold tabular-nums">
                   ₹{completedRideToRate.fareBreakdown?.timeFare.toFixed(2) || '30.00'}
@@ -2685,7 +2687,7 @@ export const PassengerApp: React.FC<PassengerAppProps> = ({
                   <p className="text-slate-700 truncate">To: {item.destination}</p>
                   <div className="flex items-center justify-between text-[11px] text-slate-500 pt-1 border-t border-slate-200">
                     <span>
-                      {(item.distance / 1000).toFixed(2)} km · {item.paymentMethod} (
+                      {formatDistanceText(item.distance)} · {formatDurationText(item.duration)} · {item.paymentMethod} (
                       {item.paymentStatus})
                     </span>
                     {item.userRating ? (
