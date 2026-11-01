@@ -13,7 +13,7 @@ import {
   DynamoCaptainItem,
   DynamoRideItem,
 } from './dynamodb-repository';
-import { isPointInChennaiServiceArea } from './domain';
+import { isPointInChennaiServiceArea, isPointInTamilNaduServiceArea } from './domain';
 
 export interface MigrationReport {
   sourcePath: string;
@@ -166,7 +166,7 @@ export async function migrateJsonStoreToDynamoDb(options: {
       if (res.Item && res.Item.captainId === captain._id) {
         verifiedCaptains += 1;
         const [lon, lat] = res.Item.location.coordinates;
-        if (!isPointInChennaiServiceArea({ lat, lon })) {
+        if (!isPointInChennaiServiceArea({ lat, lon }) && !isPointInTamilNaduServiceArea({ lat, lon })) {
           allChennaiBoundsValid = false;
         }
       }
@@ -185,8 +185,8 @@ export async function migrateJsonStoreToDynamoDb(options: {
           allInrFaresValid = false;
         }
         if (
-          !isPointInChennaiServiceArea(res.Item.pickupCoords) ||
-          !isPointInChennaiServiceArea(res.Item.destinationCoords)
+          (!isPointInChennaiServiceArea(res.Item.pickupCoords) && !isPointInTamilNaduServiceArea(res.Item.pickupCoords)) ||
+          (!isPointInChennaiServiceArea(res.Item.destinationCoords) && !isPointInTamilNaduServiceArea(res.Item.destinationCoords))
         ) {
           allChennaiBoundsValid = false;
         }

@@ -72,7 +72,27 @@ export class CabSafeRepository {
             isPointInChennaiServiceArea({ lon: firstCoords[0], lat: firstCoords[1] }) &&
             firstRideFare >= 50;
           if (isChennaiInrSeeded) {
-            this.data = parsed;
+            // First load default seed to obtain full catalog of statewide & suburban fleet
+            this.seedDefaultsSync();
+            const freshSeedCaptains = [...this.data.captains];
+            const existingCapMap = new Map(parsed.captains.map((c) => [c._id, c]));
+            
+            // Retain persisted captain updates while ensuring all new fleet vehicles are available
+            const mergedCaptains = freshSeedCaptains.map((sc) => existingCapMap.get(sc._id) || sc);
+            // Append any custom dynamically registered captains not in seed
+            for (const cap of parsed.captains) {
+              if (!freshSeedCaptains.some((sc) => sc._id === cap._id)) {
+                mergedCaptains.push(cap);
+              }
+            }
+
+            this.data = {
+              users: parsed.users?.length ? parsed.users : this.data.users,
+              captains: mergedCaptains,
+              rides: parsed.rides || [],
+              blacklistTokens: parsed.blacklistTokens || [],
+            };
+            this.save();
             return;
           }
         }
@@ -228,6 +248,337 @@ export class CabSafeRepository {
           totalEarnings: 53120.75,
           distanceKm: 1410.8,
           hoursOnline: 240.0,
+        },
+        createdAt: now,
+      },
+      // Tamil Nadu Statewide & Corridor Active Fleet
+      {
+        _id: '671b00000000000000000105',
+        fullname: { firstname: 'Karthik', lastname: 'Raja' },
+        email: 'karthik.captain@cabsafe.demo',
+        phone: '+91 98409 11021',
+        password: passwordHash,
+        socketId: null,
+        status: 'active',
+        vehicle: {
+          color: 'Matte Blue',
+          plate: 'TN-11-MK-7210',
+          capacity: 1,
+          vehicleType: 'motorcycle',
+          model: 'Yamaha FZ-S FI',
+        },
+        location: {
+          type: 'Point',
+          coordinates: [80.0435, 12.8312], // Tambaram - Chengalpattu GST Corridor (Maraimalai Nagar)
+          updatedAt: now,
+        },
+        metrics: {
+          rating: 4.93,
+          completedRides: 240,
+          assignedRides: 245,
+          totalEarnings: 38940.0,
+          distanceKm: 980.5,
+          hoursOnline: 175.0,
+        },
+        createdAt: now,
+      },
+      {
+        _id: '671b00000000000000000106',
+        fullname: { firstname: 'Suresh', lastname: 'Kumar' },
+        email: 'suresh.captain@cabsafe.demo',
+        phone: '+91 98406 33902',
+        password: passwordHash,
+        socketId: null,
+        status: 'active',
+        vehicle: {
+          color: 'Golden Yellow',
+          plate: 'TN-11-CN-4418',
+          capacity: 3,
+          vehicleType: 'cng',
+          model: 'Bajaj RE Compact Auto',
+        },
+        location: {
+          type: 'Point',
+          coordinates: [80.1172, 12.9249], // Tambaram GST Junction
+          updatedAt: now,
+        },
+        metrics: {
+          rating: 4.89,
+          completedRides: 185,
+          assignedRides: 190,
+          totalEarnings: 34120.0,
+          distanceKm: 760.0,
+          hoursOnline: 160.0,
+        },
+        createdAt: now,
+      },
+      {
+        _id: '671b00000000000000000107',
+        fullname: { firstname: 'Ananya', lastname: 'Sundaram' },
+        email: 'ananya.captain@cabsafe.demo',
+        phone: '+91 98404 88712',
+        password: passwordHash,
+        socketId: null,
+        status: 'active',
+        vehicle: {
+          color: 'Polar White',
+          plate: 'TN-11-CR-9081',
+          capacity: 4,
+          vehicleType: 'car',
+          model: 'Hyundai Creta SX',
+        },
+        location: {
+          type: 'Point',
+          coordinates: [80.0315, 12.8210], // Chengalpattu / Maraimalai Nagar
+          updatedAt: now,
+        },
+        metrics: {
+          rating: 4.95,
+          completedRides: 160,
+          assignedRides: 164,
+          totalEarnings: 45200.0,
+          distanceKm: 890.0,
+          hoursOnline: 140.0,
+        },
+        createdAt: now,
+      },
+      {
+        _id: '671b00000000000000000108',
+        fullname: { firstname: 'Dinesh', lastname: 'Varma' },
+        email: 'dinesh.captain@cabsafe.demo',
+        phone: '+91 98402 77103',
+        password: passwordHash,
+        socketId: null,
+        status: 'active',
+        vehicle: {
+          color: 'Gloss Black',
+          plate: 'TN-07-MY-2309',
+          capacity: 1,
+          vehicleType: 'motorcycle',
+          model: 'TVS Apache RTR 160',
+        },
+        location: {
+          type: 'Point',
+          coordinates: [80.2285, 12.9010], // OMR Sholinganallur Corridor
+          updatedAt: now,
+        },
+        metrics: {
+          rating: 4.91,
+          completedRides: 195,
+          assignedRides: 200,
+          totalEarnings: 32400.0,
+          distanceKm: 810.0,
+          hoursOnline: 155.0,
+        },
+        createdAt: now,
+      },
+      {
+        _id: '671b00000000000000000109',
+        fullname: { firstname: 'Vignesh', lastname: 'Raj' },
+        email: 'vignesh.captain@cabsafe.demo',
+        phone: '+91 98409 66504',
+        password: passwordHash,
+        socketId: null,
+        status: 'active',
+        vehicle: {
+          color: 'Magma Grey',
+          plate: 'TN-07-CS-8812',
+          capacity: 4,
+          vehicleType: 'car',
+          model: 'Maruti Suzuki Dzire',
+        },
+        location: {
+          type: 'Point',
+          coordinates: [80.2255, 12.8450], // OMR Navalur / Siruseri Tech Hub
+          updatedAt: now,
+        },
+        metrics: {
+          rating: 4.88,
+          completedRides: 110,
+          assignedRides: 115,
+          totalEarnings: 29800.0,
+          distanceKm: 620.0,
+          hoursOnline: 105.0,
+        },
+        createdAt: now,
+      },
+      {
+        _id: '671b00000000000000000110',
+        fullname: { firstname: 'Praveen', lastname: 'Kumar' },
+        email: 'praveen.captain@cabsafe.demo',
+        phone: '+91 98421 44501',
+        password: passwordHash,
+        socketId: null,
+        status: 'active',
+        vehicle: {
+          color: 'Teal Blue',
+          plate: 'TN-38-EV-1001',
+          capacity: 4,
+          vehicleType: 'car',
+          model: 'Tata Nexon EV Max',
+        },
+        location: {
+          type: 'Point',
+          coordinates: [76.9558, 11.0168], // Coimbatore - RS Puram
+          updatedAt: now,
+        },
+        metrics: {
+          rating: 4.96,
+          completedRides: 220,
+          assignedRides: 224,
+          totalEarnings: 56700.0,
+          distanceKm: 1240.0,
+          hoursOnline: 190.0,
+        },
+        createdAt: now,
+      },
+      {
+        _id: '671b00000000000000000111',
+        fullname: { firstname: 'Arun', lastname: 'Prasath' },
+        email: 'arun.captain@cabsafe.demo',
+        phone: '+91 98422 77802',
+        password: passwordHash,
+        socketId: null,
+        status: 'active',
+        vehicle: {
+          color: 'Cosmic Black',
+          plate: 'TN-38-MC-3003',
+          capacity: 1,
+          vehicleType: 'motorcycle',
+          model: 'Ather 450X Gen 3',
+        },
+        location: {
+          type: 'Point',
+          coordinates: [77.0028, 11.0315], // Coimbatore - Peelamedu
+          updatedAt: now,
+        },
+        metrics: {
+          rating: 4.98,
+          completedRides: 310,
+          assignedRides: 312,
+          totalEarnings: 49800.0,
+          distanceKm: 1350.0,
+          hoursOnline: 215.0,
+        },
+        createdAt: now,
+      },
+      {
+        _id: '671b00000000000000000112',
+        fullname: { firstname: 'Murugan', lastname: 'K' },
+        email: 'murugan.captain@cabsafe.demo',
+        phone: '+91 98431 88901',
+        password: passwordHash,
+        socketId: null,
+        status: 'active',
+        vehicle: {
+          color: 'Silver Metallic',
+          plate: 'TN-58-CR-4001',
+          capacity: 4,
+          vehicleType: 'car',
+          model: 'Toyota Etios Platinum',
+        },
+        location: {
+          type: 'Point',
+          coordinates: [78.1128, 9.9252], // Madurai Junction
+          updatedAt: now,
+        },
+        metrics: {
+          rating: 4.92,
+          completedRides: 145,
+          assignedRides: 150,
+          totalEarnings: 38200.0,
+          distanceKm: 890.0,
+          hoursOnline: 145.0,
+        },
+        createdAt: now,
+      },
+      {
+        _id: '671b00000000000000000113',
+        fullname: { firstname: 'Bala', lastname: 'Subramanian' },
+        email: 'bala.captain@cabsafe.demo',
+        phone: '+91 98432 99102',
+        password: passwordHash,
+        socketId: null,
+        status: 'active',
+        vehicle: {
+          color: 'Ruby Red',
+          plate: 'TN-58-MC-6003',
+          capacity: 1,
+          vehicleType: 'motorcycle',
+          model: 'Hero Splendor Plus XTEC',
+        },
+        location: {
+          type: 'Point',
+          coordinates: [78.1520, 9.9412], // Madurai Mattuthavani
+          updatedAt: now,
+        },
+        metrics: {
+          rating: 4.94,
+          completedRides: 280,
+          assignedRides: 285,
+          totalEarnings: 41200.0,
+          distanceKm: 1100.0,
+          hoursOnline: 195.0,
+        },
+        createdAt: now,
+      },
+      {
+        _id: '671b00000000000000000114',
+        fullname: { firstname: 'Ravichandran', lastname: 'M' },
+        email: 'ravichandran.captain@cabsafe.demo',
+        phone: '+91 98441 55601',
+        password: passwordHash,
+        socketId: null,
+        status: 'active',
+        vehicle: {
+          color: 'Radiant Red',
+          plate: 'TN-45-CR-7001',
+          capacity: 4,
+          vehicleType: 'car',
+          model: 'Honda Amaze VX',
+        },
+        location: {
+          type: 'Point',
+          coordinates: [78.6856, 10.7905], // Trichy Central Bus Stand
+          updatedAt: now,
+        },
+        metrics: {
+          rating: 4.93,
+          completedRides: 130,
+          assignedRides: 135,
+          totalEarnings: 33400.0,
+          distanceKm: 720.0,
+          hoursOnline: 125.0,
+        },
+        createdAt: now,
+      },
+      {
+        _id: '671b00000000000000000115',
+        fullname: { firstname: 'Manikandan', lastname: 'V' },
+        email: 'manikandan.captain@cabsafe.demo',
+        phone: '+91 98442 66702',
+        password: passwordHash,
+        socketId: null,
+        status: 'active',
+        vehicle: {
+          color: 'Black Metallic',
+          plate: 'TN-45-MC-8002',
+          capacity: 1,
+          vehicleType: 'motorcycle',
+          model: 'Honda Shine 125',
+        },
+        location: {
+          type: 'Point',
+          coordinates: [78.6920, 10.8214], // Trichy Thillai Nagar
+          updatedAt: now,
+        },
+        metrics: {
+          rating: 4.95,
+          completedRides: 260,
+          assignedRides: 265,
+          totalEarnings: 37800.0,
+          distanceKm: 990.0,
+          hoursOnline: 180.0,
         },
         createdAt: now,
       },

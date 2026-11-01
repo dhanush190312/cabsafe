@@ -262,8 +262,9 @@ export const AdminAndAuditView: React.FC<AdminAndAuditViewProps> = ({
               )}
             </div>
 
-            <div className="border-t border-slate-200 pt-3 text-[11px] text-slate-500 font-mono">
-              Formula: Score = 0.45·S_dist + 0.25·S_rating + 0.20·S_completion + 0.10·S_vehicle
+            <div className="border-t border-slate-200 pt-3 text-[11px] text-slate-500 font-semibold flex items-center gap-2">
+              <span className="text-slate-400 font-bold uppercase tracking-wider text-[10px]">Dispatch Weights:</span>
+              <span>📍 Proximity 45% · ⭐ Rating 25% · 🛡️ Reliability 20% · 🚗 Vehicle Match 10%</span>
             </div>
           </div>
         </div>

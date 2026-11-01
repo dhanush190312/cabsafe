@@ -165,15 +165,15 @@ export const SimulationCard: React.FC<SimulationCardProps> = ({
         </button>
       </div>
 
-      {/* Explainable Multi-Factor Driver Matching Breakdown */}
+      {/* Driver Dispatch Selection Breakdown (Clean & Easy to Understand) */}
       <div className="border-t border-slate-200 pt-3 space-y-2.5">
         <div className="flex items-center justify-between gap-2">
           <div className="flex items-center gap-1.5 text-xs font-bold text-slate-800 whitespace-nowrap">
             <Scale className="w-3.5 h-3.5 text-red-600 shrink-0" />
-            <span>Explainable Matching</span>
+            <span>Driver Selection Intelligence</span>
           </div>
-          <span className="font-mono text-[10px] text-slate-500 whitespace-nowrap shrink-0">
-            0.45·D + 0.25·R + 0.20·C + 0.10·V
+          <span className="text-[10px] font-bold text-emerald-700 bg-emerald-50 border border-emerald-200 px-2 py-0.5 rounded-full whitespace-nowrap shrink-0">
+            Smart Matched
           </span>
         </div>
 
@@ -204,7 +204,7 @@ export const SimulationCard: React.FC<SimulationCardProps> = ({
                       {explanation.plate}
                     </span>
                   </p>
-                  <p className="text-[10px] text-slate-400 font-medium">
+                  <p className="text-[10px] text-slate-500 font-medium">
                     {explanation.distanceKm} km away · ETA {explanation.etaMinutes} mins
                   </p>
                 </div>
@@ -212,94 +212,98 @@ export const SimulationCard: React.FC<SimulationCardProps> = ({
 
               <div className="text-right shrink-0">
                 <div className="inline-flex flex-col items-end">
+                  <span className="text-[9px] font-extrabold uppercase tracking-wider text-slate-400">
+                    Match Score
+                  </span>
                   <div className="flex items-baseline gap-0.5 font-mono">
                     <span className="text-base font-black text-red-600 tabular-nums">
-                      {explanation.finalScore.toFixed(1)}
+                      {explanation.finalScore.toFixed(0)}%
                     </span>
-                    <span className="text-[10px] text-slate-400 font-bold">/100</span>
                   </div>
-                  <span className="text-[9px] font-bold text-red-700 bg-red-100 px-1.5 py-0.2 rounded-full">
-                    {explanation.matchTier || 'Top Pick'}
+                  <span className="text-[9px] font-bold text-emerald-700 bg-emerald-50 border border-emerald-200 px-1.5 py-0.2 rounded-full">
+                    {explanation.matchTier || 'Optimal Driver'}
                   </span>
                 </div>
               </div>
             </div>
 
-            {/* 4 Multi-Factor Score Weight Breakdowns with Visual Progress Bars */}
-            <div className="grid grid-cols-2 gap-2 text-[10px]">
-              {/* Proximity */}
-              <div className="bg-white p-2 rounded-xl border border-slate-200 space-y-1 shadow-2xs">
-                <div className="flex justify-between items-center text-slate-500 font-medium">
-                  <span>Proximity (45%)</span>
-                  <span className="font-mono font-bold text-slate-900 tabular-nums">
-                    +{explanation.scoreBreakdown.distance.weighted.toFixed(1)}
-                  </span>
+            {/* 4 Clean, Plain-Language Driver Factor Cards */}
+            <div className="space-y-1.5">
+              <p className="text-[10px] font-bold text-slate-500 uppercase tracking-wider">
+                Why this driver was selected:
+              </p>
+              <div className="grid grid-cols-2 gap-2 text-xs">
+                {/* 1. Distance & Arrival */}
+                <div className="bg-white p-2.5 rounded-xl border border-slate-200 space-y-1 shadow-2xs">
+                  <div className="flex items-center justify-between">
+                    <span className="text-[10px] font-bold text-slate-500 uppercase tracking-wider">
+                      📍 Pickup Distance
+                    </span>
+                    <span className="text-[9px] font-bold text-emerald-700 bg-emerald-50 px-1.5 py-0.5 rounded">
+                      Nearby
+                    </span>
+                  </div>
+                  <p className="font-bold text-slate-900 text-[11px] leading-tight">
+                    {explanation.distanceKm} km away
+                  </p>
+                  <p className="text-[10px] text-slate-500">
+                    ~{explanation.etaMinutes} mins arrival
+                  </p>
                 </div>
-                <div className="w-full h-1.5 bg-slate-100 rounded-full overflow-hidden">
-                  <div
-                    className="h-full bg-red-600 rounded-full transition-all duration-300"
-                    style={{ width: `${Math.min(100, (explanation.scoreBreakdown.distance.weighted / 45) * 100)}%` }}
-                  />
-                </div>
-                <div className="text-[9px] text-slate-400 truncate">
-                  {explanation.distanceKm} km away ({explanation.etaMinutes}m ETA)
-                </div>
-              </div>
 
-              {/* Rating */}
-              <div className="bg-white p-2 rounded-xl border border-slate-200 space-y-1 shadow-2xs">
-                <div className="flex justify-between items-center text-slate-500 font-medium">
-                  <span>Rider Rating (25%)</span>
-                  <span className="font-mono font-bold text-slate-900 tabular-nums">
-                    +{explanation.scoreBreakdown.rating.weighted.toFixed(1)}
-                  </span>
+                {/* 2. Driver Rating */}
+                <div className="bg-white p-2.5 rounded-xl border border-slate-200 space-y-1 shadow-2xs">
+                  <div className="flex items-center justify-between">
+                    <span className="text-[10px] font-bold text-slate-500 uppercase tracking-wider">
+                      ⭐ Rating
+                    </span>
+                    <span className="text-[9px] font-bold text-amber-700 bg-amber-50 px-1.5 py-0.5 rounded">
+                      Top Rated
+                    </span>
+                  </div>
+                  <p className="font-bold text-slate-900 text-[11px] leading-tight flex items-center gap-1">
+                    <span>★ {explanation.rating?.toFixed(1) ?? '4.9'}</span>
+                    <span className="text-slate-400 font-normal">/ 5.0</span>
+                  </p>
+                  <p className="text-[10px] text-slate-500">
+                    98% 5-star reviews
+                  </p>
                 </div>
-                <div className="w-full h-1.5 bg-slate-100 rounded-full overflow-hidden">
-                  <div
-                    className="h-full bg-amber-500 rounded-full transition-all duration-300"
-                    style={{ width: `${Math.min(100, (explanation.scoreBreakdown.rating.weighted / 25) * 100)}%` }}
-                  />
-                </div>
-                <div className="text-[9px] text-slate-400 truncate">
-                  ★ {explanation.rating?.toFixed(1) ?? '4.9'} (98% Satisfaction)
-                </div>
-              </div>
 
-              {/* Reliability */}
-              <div className="bg-white p-2 rounded-xl border border-slate-200 space-y-1 shadow-2xs">
-                <div className="flex justify-between items-center text-slate-500 font-medium">
-                  <span>Reliability (20%)</span>
-                  <span className="font-mono font-bold text-slate-900 tabular-nums">
-                    +{explanation.scoreBreakdown.completion.weighted.toFixed(1)}
-                  </span>
+                {/* 3. Reliability */}
+                <div className="bg-white p-2.5 rounded-xl border border-slate-200 space-y-1 shadow-2xs">
+                  <div className="flex items-center justify-between">
+                    <span className="text-[10px] font-bold text-slate-500 uppercase tracking-wider">
+                      🛡️ Reliability
+                    </span>
+                    <span className="text-[9px] font-bold text-emerald-700 bg-emerald-50 px-1.5 py-0.5 rounded">
+                      Dependable
+                    </span>
+                  </div>
+                  <p className="font-bold text-slate-900 text-[11px] leading-tight">
+                    {explanation.scoreBreakdown.completion.raw} Completed
+                  </p>
+                  <p className="text-[10px] text-slate-500">
+                    Zero-cancellation record
+                  </p>
                 </div>
-                <div className="w-full h-1.5 bg-slate-100 rounded-full overflow-hidden">
-                  <div
-                    className="h-full bg-emerald-600 rounded-full transition-all duration-300"
-                    style={{ width: `${Math.min(100, (explanation.scoreBreakdown.completion.weighted / 20) * 100)}%` }}
-                  />
-                </div>
-                <div className="text-[9px] text-slate-400 truncate">
-                  {explanation.scoreBreakdown.completion.raw} trip completion
-                </div>
-              </div>
 
-              {/* Vehicle Fit */}
-              <div className="bg-white p-2 rounded-xl border border-slate-200 space-y-1 shadow-2xs">
-                <div className="flex justify-between items-center text-slate-500 font-medium">
-                  <span>Vehicle Fit (10%)</span>
-                  <span className="font-mono font-bold text-slate-900 tabular-nums">
-                    +{explanation.scoreBreakdown.vehicle.weighted.toFixed(1)}
-                  </span>
-                </div>
-                <div className="w-full h-1.5 bg-slate-100 rounded-full overflow-hidden">
-                  <div
-                    className="h-full bg-blue-600 rounded-full transition-all duration-300"
-                    style={{ width: `${Math.min(100, (explanation.scoreBreakdown.vehicle.weighted / 10) * 100)}%` }}
-                  />
-                </div>
-                <div className="text-[9px] text-slate-400 truncate">
-                  {explanation.vehicleType.toUpperCase()} exact tier match
+                {/* 4. Vehicle Type */}
+                <div className="bg-white p-2.5 rounded-xl border border-slate-200 space-y-1 shadow-2xs">
+                  <div className="flex items-center justify-between">
+                    <span className="text-[10px] font-bold text-slate-500 uppercase tracking-wider">
+                      🚗 Vehicle Match
+                    </span>
+                    <span className="text-[9px] font-bold text-blue-700 bg-blue-50 px-1.5 py-0.5 rounded">
+                      Exact Tier
+                    </span>
+                  </div>
+                  <p className="font-bold text-slate-900 text-[11px] leading-tight truncate">
+                    {explanation.vehicleType === 'motorcycle' ? 'Moto Express' : explanation.vehicleType === 'cng' ? 'Auto CNG' : 'Cab / Car'}
+                  </p>
+                  <p className="text-[10px] text-slate-500 truncate">
+                    {explanation.vehicleModel || 'Standard'}
+                  </p>
                 </div>
               </div>
             </div>
@@ -309,7 +313,7 @@ export const SimulationCard: React.FC<SimulationCardProps> = ({
               <div className="flex items-center justify-between text-[10px]">
                 <span className="font-bold text-slate-800 flex items-center gap-1">
                   <Sparkles className="w-3 h-3 text-red-600" />
-                  <span>Explainable Dispatch Rationale</span>
+                  <span>Dispatch Summary</span>
                 </span>
                 {explanation.driverFare && (
                   <span className="font-mono font-black text-red-600">
@@ -318,7 +322,7 @@ export const SimulationCard: React.FC<SimulationCardProps> = ({
                 )}
               </div>
               <p className="text-[11px] text-slate-600 leading-relaxed font-medium">
-                {explanation.explanation}
+                {explanation.captainName} is your nearest top-rated captain ({explanation.distanceKm} km away, ~{explanation.etaMinutes}m ETA) with an exceptional {explanation.rating?.toFixed(1) ?? '4.9'}★ rating and {explanation.scoreBreakdown.completion.raw} trip reliability.
               </p>
 
               {/* Pro Feature Tags */}

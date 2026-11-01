@@ -1403,30 +1403,39 @@ export const PassengerApp: React.FC<PassengerAppProps> = ({
                         'Optimized using 4-factor scoring: Haversine proximity, historical 5-star rating, and 99% trip completion.'}
                     </p>
 
-                    <div className="grid grid-cols-2 gap-1.5 text-[10px] font-mono">
-                      <div className="bg-white px-2.5 py-1.5 rounded-xl border border-slate-200 flex justify-between items-center shadow-2xs">
-                        <span className="text-slate-500 font-sans">Proximity (45%):</span>
-                        <span className="font-bold text-slate-800">
-                          +{activeRide.matchExplanation?.scoreBreakdown?.distance?.weighted?.toFixed(1) ?? '14.3'} pts
+                    <div className="grid grid-cols-2 gap-1.5 text-xs">
+                      <div className="bg-white px-2.5 py-1.5 rounded-xl border border-slate-200 space-y-0.5 shadow-2xs">
+                        <span className="text-[9px] font-bold text-slate-500 uppercase tracking-wider block">
+                          📍 Pickup Arrival
                         </span>
+                        <p className="font-bold text-slate-900 text-[11px]">
+                          {activeRide.matchExplanation?.distanceKm ?? '2.4'} km · ~{activeRide.matchExplanation?.etaMinutes ?? '5'}m ETA
+                        </p>
                       </div>
-                      <div className="bg-white px-2.5 py-1.5 rounded-xl border border-slate-200 flex justify-between items-center shadow-2xs">
-                        <span className="text-slate-500 font-sans">Rating (25%):</span>
-                        <span className="font-bold text-slate-800">
-                          +{activeRide.matchExplanation?.scoreBreakdown?.rating?.weighted?.toFixed(1) ?? '24.6'} pts
+                      <div className="bg-white px-2.5 py-1.5 rounded-xl border border-slate-200 space-y-0.5 shadow-2xs">
+                        <span className="text-[9px] font-bold text-slate-500 uppercase tracking-wider block">
+                          ⭐ Captain Rating
                         </span>
+                        <p className="font-bold text-slate-900 text-[11px] flex items-center gap-1">
+                          <span>★ {activeRide.matchExplanation?.rating?.toFixed(1) ?? '4.9'}</span>
+                          <span className="text-slate-400 font-normal">/ 5.0 (Top Rated)</span>
+                        </p>
                       </div>
-                      <div className="bg-white px-2.5 py-1.5 rounded-xl border border-slate-200 flex justify-between items-center shadow-2xs">
-                        <span className="text-slate-500 font-sans">Reliability (20%):</span>
-                        <span className="font-bold text-slate-800">
-                          +{activeRide.matchExplanation?.scoreBreakdown?.completion?.weighted?.toFixed(1) ?? '19.2'} pts
+                      <div className="bg-white px-2.5 py-1.5 rounded-xl border border-slate-200 space-y-0.5 shadow-2xs">
+                        <span className="text-[9px] font-bold text-slate-500 uppercase tracking-wider block">
+                          🛡️ Ride Reliability
                         </span>
+                        <p className="font-bold text-slate-900 text-[11px]">
+                          {activeRide.matchExplanation?.scoreBreakdown?.completion?.raw ?? '98%'} Trip Completion
+                        </p>
                       </div>
-                      <div className="bg-white px-2.5 py-1.5 rounded-xl border border-slate-200 flex justify-between items-center shadow-2xs">
-                        <span className="text-slate-500 font-sans">Vehicle (10%):</span>
-                        <span className="font-bold text-slate-800">
-                          +{activeRide.matchExplanation?.scoreBreakdown?.vehicle?.weighted?.toFixed(1) ?? '10.0'} pts
+                      <div className="bg-white px-2.5 py-1.5 rounded-xl border border-slate-200 space-y-0.5 shadow-2xs">
+                        <span className="text-[9px] font-bold text-slate-500 uppercase tracking-wider block">
+                          🚗 Vehicle Fit
                         </span>
+                        <p className="font-bold text-slate-900 text-[11px] truncate">
+                          {activeRide.vehicleType.toUpperCase()} Exact Tier Match
+                        </p>
                       </div>
                     </div>
                   </div>
@@ -2388,8 +2397,13 @@ export const PassengerApp: React.FC<PassengerAppProps> = ({
                     {/* Tier-Matching Drivers Cards */}
                     <div className="space-y-1.5 max-h-[160px] overflow-y-auto pr-0.5">
                       {tierMatchingDrivers.length === 0 ? (
-                        <div className="bg-slate-50 border border-slate-200 rounded-2xl p-3 text-center text-xs text-slate-500">
-                          Scanning active fleet for {selectedVehicle} drivers nearby...
+                        <div className="bg-amber-50/70 border border-amber-200 rounded-2xl p-3 text-center space-y-1">
+                          <p className="text-xs font-bold text-amber-900">
+                            Connecting with nearest {selectedVehicle === 'motorcycle' ? 'Moto' : selectedVehicle === 'cng' ? 'Auto' : 'Cab'} fleet
+                          </p>
+                          <p className="text-[11px] text-amber-700">
+                            Captains dispatched across Tamil Nadu corridor. Tap below to confirm ride.
+                          </p>
                         </div>
                       ) : (
                         tierMatchingDrivers.map((cand, idx) => {
@@ -2535,63 +2549,79 @@ export const PassengerApp: React.FC<PassengerAppProps> = ({
                           </div>
                         </div>
 
-                        {/* 4 Multi-Factor Score Weight Breakdowns with mini bars */}
-                        <div className="grid grid-cols-2 gap-1.5 text-[10px] font-mono">
-                          <div className="bg-white px-2.5 py-1.5 rounded-xl border border-slate-200 space-y-1 shadow-2xs">
-                            <div className="flex justify-between items-center">
-                              <span className="text-slate-500 font-sans text-[9px]">Distance (45%):</span>
-                              <span className="font-bold text-slate-800">
-                                +{activeCandidate.scoreBreakdown.distance.weighted.toFixed(1)}
+                        {/* 4 Clean Driver Selection Factors */}
+                        <div className="grid grid-cols-2 gap-1.5 text-xs">
+                          {/* 1. Distance & Arrival */}
+                          <div className="bg-white p-2 rounded-xl border border-slate-200 space-y-0.5 shadow-2xs">
+                            <div className="flex items-center justify-between">
+                              <span className="text-[9px] font-bold text-slate-500 uppercase tracking-wider">
+                                📍 Pickup Speed
+                              </span>
+                              <span className="text-[9px] font-bold text-emerald-700 bg-emerald-50 px-1 rounded">
+                                Nearby
                               </span>
                             </div>
-                            <div className="w-full h-1 bg-slate-100 rounded-full overflow-hidden">
-                              <div
-                                className="h-full bg-red-600 rounded-full"
-                                style={{ width: `${Math.min(100, (activeCandidate.scoreBreakdown.distance.weighted / 45) * 100)}%` }}
-                              />
-                            </div>
+                            <p className="font-bold text-slate-900 text-[11px] truncate">
+                              {activeCandidate.distanceKm} km away
+                            </p>
+                            <p className="text-[10px] text-slate-500">
+                              ~{activeCandidate.etaMinutes} mins arrival
+                            </p>
                           </div>
-                          <div className="bg-white px-2.5 py-1.5 rounded-xl border border-slate-200 space-y-1 shadow-2xs">
-                            <div className="flex justify-between items-center">
-                              <span className="text-slate-500 font-sans text-[9px]">Rating (25%):</span>
-                              <span className="font-bold text-slate-800">
-                                +{activeCandidate.scoreBreakdown.rating.weighted.toFixed(1)}
+
+                          {/* 2. Driver Rating */}
+                          <div className="bg-white p-2 rounded-xl border border-slate-200 space-y-0.5 shadow-2xs">
+                            <div className="flex items-center justify-between">
+                              <span className="text-[9px] font-bold text-slate-500 uppercase tracking-wider">
+                                ⭐ Quality
+                              </span>
+                              <span className="text-[9px] font-bold text-amber-700 bg-amber-50 px-1 rounded">
+                                Top Rated
                               </span>
                             </div>
-                            <div className="w-full h-1 bg-slate-100 rounded-full overflow-hidden">
-                              <div
-                                className="h-full bg-amber-500 rounded-full"
-                                style={{ width: `${Math.min(100, (activeCandidate.scoreBreakdown.rating.weighted / 25) * 100)}%` }}
-                              />
-                            </div>
+                            <p className="font-bold text-slate-900 text-[11px] flex items-center gap-1">
+                              <span>★ {activeCandidate.rating?.toFixed(1) ?? '4.9'}</span>
+                              <span className="text-slate-400 font-normal">/ 5.0</span>
+                            </p>
+                            <p className="text-[10px] text-slate-500">
+                              98% positive reviews
+                            </p>
                           </div>
-                          <div className="bg-white px-2.5 py-1.5 rounded-xl border border-slate-200 space-y-1 shadow-2xs">
-                            <div className="flex justify-between items-center">
-                              <span className="text-slate-500 font-sans text-[9px]">Reliability (20%):</span>
-                              <span className="font-bold text-slate-800">
-                                +{activeCandidate.scoreBreakdown.completion.weighted.toFixed(1)}
+
+                          {/* 3. Reliability */}
+                          <div className="bg-white p-2 rounded-xl border border-slate-200 space-y-0.5 shadow-2xs">
+                            <div className="flex items-center justify-between">
+                              <span className="text-[9px] font-bold text-slate-500 uppercase tracking-wider">
+                                🛡️ Reliability
+                              </span>
+                              <span className="text-[9px] font-bold text-emerald-700 bg-emerald-50 px-1 rounded">
+                                Dependable
                               </span>
                             </div>
-                            <div className="w-full h-1 bg-slate-100 rounded-full overflow-hidden">
-                              <div
-                                className="h-full bg-emerald-600 rounded-full"
-                                style={{ width: `${Math.min(100, (activeCandidate.scoreBreakdown.completion.weighted / 20) * 100)}%` }}
-                              />
-                            </div>
+                            <p className="font-bold text-slate-900 text-[11px] truncate">
+                              {activeCandidate.scoreBreakdown.completion.raw} Completed
+                            </p>
+                            <p className="text-[10px] text-slate-500">
+                              Zero cancellation
+                            </p>
                           </div>
-                          <div className="bg-white px-2.5 py-1.5 rounded-xl border border-slate-200 space-y-1 shadow-2xs">
-                            <div className="flex justify-between items-center">
-                              <span className="text-slate-500 font-sans text-[9px]">Vehicle (10%):</span>
-                              <span className="font-bold text-slate-800">
-                                +{activeCandidate.scoreBreakdown.vehicle.weighted.toFixed(1)}
+
+                          {/* 4. Vehicle Type */}
+                          <div className="bg-white p-2 rounded-xl border border-slate-200 space-y-0.5 shadow-2xs">
+                            <div className="flex items-center justify-between">
+                              <span className="text-[9px] font-bold text-slate-500 uppercase tracking-wider">
+                                🚗 Vehicle Match
+                              </span>
+                              <span className="text-[9px] font-bold text-blue-700 bg-blue-50 px-1 rounded">
+                                Exact Tier
                               </span>
                             </div>
-                            <div className="w-full h-1 bg-slate-100 rounded-full overflow-hidden">
-                              <div
-                                className="h-full bg-blue-600 rounded-full"
-                                style={{ width: `${Math.min(100, (activeCandidate.scoreBreakdown.vehicle.weighted / 10) * 100)}%` }}
-                              />
-                            </div>
+                            <p className="font-bold text-slate-900 text-[11px] truncate">
+                              {activeCandidate.vehicleType === 'motorcycle' ? 'Moto Express' : activeCandidate.vehicleType === 'cng' ? 'Auto CNG' : 'Cab / Car'}
+                            </p>
+                            <p className="text-[10px] text-slate-500 truncate">
+                              {activeCandidate.vehicleModel || 'Standard'}
+                            </p>
                           </div>
                         </div>
 

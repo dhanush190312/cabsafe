@@ -1043,31 +1043,39 @@ export const CaptainApp: React.FC<CaptainAppProps> = ({
                       You are the #1 ranked captain for this corridor based on your {primaryOffer.matchExplanation.distanceKm} km proximity, {primaryOffer.matchExplanation.rating?.toFixed(1) ?? '4.9'}★ rating, and stellar {primaryOffer.matchExplanation.scoreBreakdown?.completion?.raw || '96%'} completion record.
                     </p>
 
-                    {/* 4 Factor Matrix */}
-                    <div className="grid grid-cols-2 gap-1.5 text-[10px] font-mono pt-1">
-                      <div className="bg-[#0D0F14] px-2.5 py-1.5 rounded-xl border border-white/5 flex justify-between items-center">
-                        <span className="text-slate-400 font-sans">Proximity (45%):</span>
-                        <span className="text-[#E2FF44] font-bold">
-                          +{primaryOffer.matchExplanation.scoreBreakdown?.distance?.weighted?.toFixed(1) ?? '14.3'} pts
+                    {/* 4 Clean Driver Factor Cards */}
+                    <div className="grid grid-cols-2 gap-1.5 text-xs pt-1">
+                      <div className="bg-[#0D0F14] px-2.5 py-1.5 rounded-xl border border-white/5 space-y-0.5">
+                        <span className="text-[9px] font-bold text-slate-400 uppercase tracking-wider block">
+                          📍 Pickup Speed
                         </span>
+                        <p className="text-[#E2FF44] font-bold text-[11px]">
+                          {primaryOffer.matchExplanation.distanceKm} km · ~{primaryOffer.matchExplanation.etaMinutes}m ETA
+                        </p>
                       </div>
-                      <div className="bg-[#0D0F14] px-2.5 py-1.5 rounded-xl border border-white/5 flex justify-between items-center">
-                        <span className="text-slate-400 font-sans">Rating (25%):</span>
-                        <span className="text-[#E2FF44] font-bold">
-                          +{primaryOffer.matchExplanation.scoreBreakdown?.rating?.weighted?.toFixed(1) ?? '24.6'} pts
+                      <div className="bg-[#0D0F14] px-2.5 py-1.5 rounded-xl border border-white/5 space-y-0.5">
+                        <span className="text-[9px] font-bold text-slate-400 uppercase tracking-wider block">
+                          ⭐ Driver Rating
                         </span>
+                        <p className="text-[#E2FF44] font-bold text-[11px]">
+                          ★ {primaryOffer.matchExplanation.rating?.toFixed(1) ?? '4.9'} / 5.0
+                        </p>
                       </div>
-                      <div className="bg-[#0D0F14] px-2.5 py-1.5 rounded-xl border border-white/5 flex justify-between items-center">
-                        <span className="text-slate-400 font-sans">Reliability (20%):</span>
-                        <span className="text-[#E2FF44] font-bold">
-                          +{primaryOffer.matchExplanation.scoreBreakdown?.completion?.weighted?.toFixed(1) ?? '19.2'} pts
+                      <div className="bg-[#0D0F14] px-2.5 py-1.5 rounded-xl border border-white/5 space-y-0.5">
+                        <span className="text-[9px] font-bold text-slate-400 uppercase tracking-wider block">
+                          🛡️ Reliability
                         </span>
+                        <p className="text-[#E2FF44] font-bold text-[11px]">
+                          {primaryOffer.matchExplanation.scoreBreakdown?.completion?.raw || '96%'} Completion
+                        </p>
                       </div>
-                      <div className="bg-[#0D0F14] px-2.5 py-1.5 rounded-xl border border-white/5 flex justify-between items-center">
-                        <span className="text-slate-400 font-sans">Vehicle (10%):</span>
-                        <span className="text-[#E2FF44] font-bold">
-                          +{primaryOffer.matchExplanation.scoreBreakdown?.vehicle?.weighted?.toFixed(1) ?? '10.0'} pts
+                      <div className="bg-[#0D0F14] px-2.5 py-1.5 rounded-xl border border-white/5 space-y-0.5">
+                        <span className="text-[9px] font-bold text-slate-400 uppercase tracking-wider block">
+                          🚗 Vehicle Fit
                         </span>
+                        <p className="text-[#E2FF44] font-bold text-[11px] truncate">
+                          Exact Tier Match
+                        </p>
                       </div>
                     </div>
                   </div>

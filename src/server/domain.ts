@@ -545,6 +545,23 @@ export function rankCaptainsExplainably(
   const eligible = captains.filter((c) => c.status === 'active');
   const baseFares = calculateFaresFromDistanceAndDuration(distanceMeters, durationSeconds).fares;
 
+  // Adaptive radius: if requested vehicle has no drivers within default maxRadiusKm, adaptively expand to nearest corridor fleet
+  let effectiveMaxRadius = maxRadiusKm;
+  if (requestedVehicle) {
+    const hasNearbyTier = eligible.some((c) => {
+      const isCompat = c.vehicle.vehicleType === requestedVehicle || (c.vehicle.vehicleType === 'car' && requestedVehicle === 'cng');
+      if (!isCompat) return false;
+      const coords: Coordinates = {
+        lon: c.location?.coordinates?.[0] ?? CHENNAI_MAP_CONFIG.defaultCenter.lon,
+        lat: c.location?.coordinates?.[1] ?? CHENNAI_MAP_CONFIG.defaultCenter.lat,
+      };
+      return calculateHaversineKm(pickupCoords, coords) <= maxRadiusKm;
+    });
+    if (!hasNearbyTier) {
+      effectiveMaxRadius = Math.max(maxRadiusKm, 85.0);
+    }
+  }
+
   const ranked: MatchExplanation[] = [];
 
   for (const captain of eligible) {
@@ -554,7 +571,7 @@ export function rankCaptainsExplainably(
     };
 
     const distanceKm = calculateHaversineKm(pickupCoords, capCoords);
-    if (distanceKm > maxRadiusKm) {
+    if (distanceKm > effectiveMaxRadius) {
       continue;
     }
 
@@ -658,7 +675,7 @@ export function rankCaptainsExplainably(
           weighted: weightedVehicle,
         },
       },
-      explanation: `Matched ${captainName} (₹${driverFare.toFixed(2)}): ${distanceKm.toFixed(1)} km pickup (${weightedDistance.toFixed(1)} pts), ${rawRating.toFixed(1)}★ rating (${weightedRating.toFixed(1)} pts), ${Math.round(sCompletion * 100)}% completion (${weightedCompletion.toFixed(1)} pts), and ${capType} match (${weightedVehicle.toFixed(1)} pts).`,
+      explanation: `Matched ${captainName}: Top-rated captain (${distanceKm.toFixed(1)} km · ~${etaMinutes}m ETA) with ★${rawRating.toFixed(1)} rating, ${Math.round(sCompletion * 100)}% trip reliability, and verified ${capType === 'cng' ? 'Auto CNG' : capType === 'motorcycle' ? 'Moto Express' : 'Cab'} service.`,
     });
   }
 
