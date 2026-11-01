@@ -135,6 +135,74 @@ export const PassengerApp: React.FC<PassengerAppProps> = ({
   const [paymentMethod, setPaymentMethod] = useState<'Card' | 'Cash' | 'Wallet'>('Card');
   const [profileSavedMsg, setProfileSavedMsg] = useState<string | null>(null);
 
+  // Map drag & resize state (must remain at top level for React rules of hooks)
+  const [mapHeightPercent, setMapHeightPercent] = useState<number>(36);
+  const [isMapExpanded, setIsMapExpanded] = useState<boolean>(false);
+  const [isDraggingMap, setIsDraggingMap] = useState<boolean>(false);
+  const dragStartYRef = useRef<number>(0);
+  const startPercentRef = useRef<number>(36);
+
+  const handleDragStart = (e: React.MouseEvent) => {
+    e.preventDefault();
+    setIsDraggingMap(true);
+    dragStartYRef.current = e.clientY;
+    startPercentRef.current = isMapExpanded ? 76 : mapHeightPercent;
+
+    const onMouseMove = (moveEvent: MouseEvent) => {
+      const deltaY = moveEvent.clientY - dragStartYRef.current;
+      const totalH = window.innerHeight || 800;
+      const deltaPct = (deltaY / totalH) * 100;
+      const nextPct = Math.min(84, Math.max(20, startPercentRef.current + deltaPct));
+      setMapHeightPercent(nextPct);
+      if (nextPct >= 65) {
+        setIsMapExpanded(true);
+      } else {
+        setIsMapExpanded(false);
+      }
+    };
+
+    const onMouseUp = () => {
+      setIsDraggingMap(false);
+      window.removeEventListener('mousemove', onMouseMove);
+      window.removeEventListener('mouseup', onMouseUp);
+    };
+
+    window.addEventListener('mousemove', onMouseMove);
+    window.addEventListener('mouseup', onMouseUp);
+  };
+
+  const handleTouchStart = (e: React.TouchEvent) => {
+    const touch = e.touches[0];
+    if (!touch) return;
+    setIsDraggingMap(true);
+    dragStartYRef.current = touch.clientY;
+    startPercentRef.current = isMapExpanded ? 76 : mapHeightPercent;
+
+    const onTouchMove = (moveEvent: TouchEvent) => {
+      const currentTouch = moveEvent.touches[0];
+      if (!currentTouch) return;
+      const deltaY = currentTouch.clientY - dragStartYRef.current;
+      const totalH = window.innerHeight || 800;
+      const deltaPct = (deltaY / totalH) * 100;
+      const nextPct = Math.min(84, Math.max(20, startPercentRef.current + deltaPct));
+      setMapHeightPercent(nextPct);
+      if (nextPct >= 65) {
+        setIsMapExpanded(true);
+      } else {
+        setIsMapExpanded(false);
+      }
+    };
+
+    const onTouchEnd = () => {
+      setIsDraggingMap(false);
+      window.removeEventListener('touchmove', onTouchMove);
+      window.removeEventListener('touchend', onTouchEnd);
+    };
+
+    window.addEventListener('touchmove', onTouchMove);
+    window.addEventListener('touchend', onTouchEnd);
+  };
+
   // Load Chennai landmarks & recent ride history once authenticated
   useEffect(() => {
     apiRequest<LandmarkSuggestion[]>('/maps/landmarks')
@@ -921,73 +989,6 @@ export const PassengerApp: React.FC<PassengerAppProps> = ({
   const isLocationStale = lastUpdateTimestamp
     ? Date.now() - new Date(lastUpdateTimestamp).getTime() > 120000
     : false;
-
-  const [mapHeightPercent, setMapHeightPercent] = useState<number>(36);
-  const [isMapExpanded, setIsMapExpanded] = useState<boolean>(false);
-  const [isDraggingMap, setIsDraggingMap] = useState<boolean>(false);
-  const dragStartYRef = useRef<number>(0);
-  const startPercentRef = useRef<number>(36);
-
-  const handleDragStart = (e: React.MouseEvent) => {
-    e.preventDefault();
-    setIsDraggingMap(true);
-    dragStartYRef.current = e.clientY;
-    startPercentRef.current = isMapExpanded ? 76 : mapHeightPercent;
-
-    const onMouseMove = (moveEvent: MouseEvent) => {
-      const deltaY = moveEvent.clientY - dragStartYRef.current;
-      const totalH = window.innerHeight || 800;
-      const deltaPct = (deltaY / totalH) * 100;
-      const nextPct = Math.min(84, Math.max(20, startPercentRef.current + deltaPct));
-      setMapHeightPercent(nextPct);
-      if (nextPct >= 65) {
-        setIsMapExpanded(true);
-      } else {
-        setIsMapExpanded(false);
-      }
-    };
-
-    const onMouseUp = () => {
-      setIsDraggingMap(false);
-      window.removeEventListener('mousemove', onMouseMove);
-      window.removeEventListener('mouseup', onMouseUp);
-    };
-
-    window.addEventListener('mousemove', onMouseMove);
-    window.addEventListener('mouseup', onMouseUp);
-  };
-
-  const handleTouchStart = (e: React.TouchEvent) => {
-    const touch = e.touches[0];
-    if (!touch) return;
-    setIsDraggingMap(true);
-    dragStartYRef.current = touch.clientY;
-    startPercentRef.current = isMapExpanded ? 76 : mapHeightPercent;
-
-    const onTouchMove = (moveEvent: TouchEvent) => {
-      const currentTouch = moveEvent.touches[0];
-      if (!currentTouch) return;
-      const deltaY = currentTouch.clientY - dragStartYRef.current;
-      const totalH = window.innerHeight || 800;
-      const deltaPct = (deltaY / totalH) * 100;
-      const nextPct = Math.min(84, Math.max(20, startPercentRef.current + deltaPct));
-      setMapHeightPercent(nextPct);
-      if (nextPct >= 65) {
-        setIsMapExpanded(true);
-      } else {
-        setIsMapExpanded(false);
-      }
-    };
-
-    const onTouchEnd = () => {
-      setIsDraggingMap(false);
-      window.removeEventListener('touchmove', onTouchMove);
-      window.removeEventListener('touchend', onTouchEnd);
-    };
-
-    window.addEventListener('touchmove', onTouchMove);
-    window.addEventListener('touchend', onTouchEnd);
-  };
 
   return (
     <div className="relative h-full w-full flex flex-col bg-slate-50 text-slate-900 overflow-hidden">
