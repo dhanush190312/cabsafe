@@ -91,6 +91,53 @@ export type {
 
 export type WorkspaceTab = 'passenger' | 'captain' | 'admin' | 'audit';
 
+export interface TierEstimate {
+  duration: { text: string; value: number };
+  distance: { text: string; value: number };
+  speedLabel: string;
+  trafficAdvantage: string;
+  savingsMinutes?: number;
+}
+
+export function calculateTierEstimates(
+  baseDistanceMeters: number,
+  baseDurationSeconds: number
+): Record<VehicleType, TierEstimate> {
+  const distText = formatDistanceText(baseDistanceMeters);
+  
+  // Motorcycle: agile lane filtering in traffic, ~24% faster trip duration
+  const motoSeconds = Math.max(90, Math.round(baseDurationSeconds * 0.76));
+  const motoSavings = Math.max(1, Math.round((baseDurationSeconds - motoSeconds) / 60));
+
+  // CNG Auto: governed 45-50 km/h, slower on open highways, ~25% longer trip duration
+  const autoSeconds = Math.max(120, Math.round(baseDurationSeconds * 1.25));
+
+  // Car: base calibrated duration
+  const carSeconds = baseDurationSeconds;
+
+  return {
+    car: {
+      duration: { text: formatDurationText(carSeconds), value: carSeconds },
+      distance: { text: distText, value: baseDistanceMeters },
+      speedLabel: 'Arterial speed',
+      trafficAdvantage: 'AC comfort on bypass',
+    },
+    cng: {
+      duration: { text: formatDurationText(autoSeconds), value: autoSeconds },
+      distance: { text: distText, value: baseDistanceMeters },
+      speedLabel: 'Governed 45-50 km/h',
+      trafficAdvantage: 'Economical steady commute',
+    },
+    motorcycle: {
+      duration: { text: formatDurationText(motoSeconds), value: motoSeconds },
+      distance: { text: distText, value: baseDistanceMeters },
+      speedLabel: 'Agile lane filtering',
+      trafficAdvantage: `⚡ Saves ~${motoSavings} mins in traffic`,
+      savingsMinutes: motoSavings,
+    },
+  };
+}
+
 export interface FareEstimateResponse {
   car: number;
   cng: number;
@@ -102,6 +149,7 @@ export interface FareEstimateResponse {
   >;
   distance: { text: string; value: number };
   duration: { text: string; value: number };
+  tierEstimates?: Record<VehicleType, TierEstimate>;
   originCoords: Coordinates;
   destinationCoords: Coordinates;
   routeGeometry: [number, number][];

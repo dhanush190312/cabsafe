@@ -46,6 +46,8 @@ import {
   getTamilNaduRegionLabel,
   formatDistanceText,
   formatDurationText,
+  calculateTierEstimates,
+  TierEstimate,
 } from '../types';
 import { LiveMap } from './LiveMap';
 import { TopDownCarSvg } from './TopDownCarSvg';
@@ -125,6 +127,16 @@ export const PassengerApp: React.FC<PassengerAppProps> = ({
   useEffect(() => {
     onSelectedCandidateChange?.(activeCandidate);
   }, [activeCandidate, onSelectedCandidateChange]);
+
+  const tierEstimates = useMemo(() => {
+    if (!fareEstimate) return null;
+    if (fareEstimate.tierEstimates) return fareEstimate.tierEstimates;
+    return calculateTierEstimates(fareEstimate.distance.value, fareEstimate.duration.value);
+  }, [fareEstimate]);
+
+  const currentTierEstimate = tierEstimates ? tierEstimates[selectedVehicle] : null;
+  const currentDistanceText = currentTierEstimate?.distance.text || fareEstimate?.distance.text || null;
+  const currentDurationText = currentTierEstimate?.duration.text || fareEstimate?.duration.text || null;
 
   // Drawers & Post-Ride Modals
   const [drawer, setDrawer] = useState<'none' | 'history' | 'profile'>('none');
@@ -1057,11 +1069,11 @@ export const PassengerApp: React.FC<PassengerAppProps> = ({
           vehicleType={activeRide?.vehicleType || selectedVehicle}
           routeGeometry={mapGeometry}
           routeDistanceText={
-            fareEstimate?.distance?.text ||
+            currentDistanceText ||
             (activeRide?.distance ? formatDistanceText(activeRide.distance) : null)
           }
           routeDurationText={
-            fareEstimate?.duration?.text ||
+            currentDurationText ||
             (activeRide?.duration ? formatDurationText(activeRide.duration) : null)
           }
           showFleetMarkers={false}
@@ -2221,8 +2233,29 @@ export const PassengerApp: React.FC<PassengerAppProps> = ({
 
               <div className="bg-slate-50 rounded-[22px] p-3 space-y-2 text-xs border border-slate-200 shadow-xs">
                 <div className="flex items-center justify-between font-mono text-red-600 font-bold border-b border-slate-200 pb-2">
-                  <span>Estimated Distance: {fareEstimate.distance.text}</span>
-                  <span>Duration: {fareEstimate.duration.text}</span>
+                  <span>Route Distance: {fareEstimate.distance.text}</span>
+                  <span className="text-slate-500 text-[11px] font-sans font-semibold">Tier Speed Comparison</span>
+                </div>
+                {/* 3-Tier Vehicle Speed Comparison Bar */}
+                <div className="grid grid-cols-3 gap-1.5 pt-0.5">
+                  <div className="bg-white p-1.5 rounded-xl border border-slate-200 text-center shadow-2xs">
+                    <span className="text-[10px] text-slate-500 font-bold block">🚗 Go Sedan</span>
+                    <span className="text-xs font-mono font-extrabold text-slate-900">
+                      {tierEstimates?.car.duration.text || fareEstimate.duration.text}
+                    </span>
+                  </div>
+                  <div className="bg-white p-1.5 rounded-xl border border-slate-200 text-center shadow-2xs">
+                    <span className="text-[10px] text-slate-500 font-bold block">🛺 Auto CNG</span>
+                    <span className="text-xs font-mono font-extrabold text-slate-900">
+                      {tierEstimates?.cng.duration.text || fareEstimate.duration.text}
+                    </span>
+                  </div>
+                  <div className="bg-emerald-50/80 p-1.5 rounded-xl border border-emerald-200 text-center shadow-2xs">
+                    <span className="text-[10px] text-emerald-700 font-bold block">⚡ Moto</span>
+                    <span className="text-xs font-mono font-black text-emerald-800">
+                      {tierEstimates?.motorcycle.duration.text || fareEstimate.duration.text}
+                    </span>
+                  </div>
                 </div>
                 <div className="bg-white rounded-full px-3 py-2 flex items-center gap-2.5 border border-slate-200 shadow-2xs">
                   <MapPin className="w-4 h-4 text-red-600 shrink-0" />
@@ -2264,9 +2297,24 @@ export const PassengerApp: React.FC<PassengerAppProps> = ({
                   </span>
                   <h2 className="text-base font-extrabold text-slate-900 mt-1">Choose a ride</h2>
                   {fareEstimate && (
-                    <p className="text-[11px] text-slate-500 font-mono">
-                      {fareEstimate.distance.text} · {fareEstimate.duration.text}
-                    </p>
+                    <div className="flex items-center gap-2 flex-wrap mt-0.5">
+                      <p className="text-xs font-bold text-slate-800 font-mono">
+                        {currentDistanceText} · {currentDurationText}
+                      </p>
+                      {currentTierEstimate && (
+                        <span
+                          className={`text-[10px] font-bold px-2 py-0.5 rounded-full ${
+                            selectedVehicle === 'motorcycle'
+                              ? 'bg-emerald-50 text-emerald-700 border border-emerald-200'
+                              : selectedVehicle === 'cng'
+                                ? 'bg-amber-50 text-amber-800 border border-amber-200'
+                                : 'bg-blue-50 text-blue-700 border border-blue-200'
+                          }`}
+                        >
+                          {currentTierEstimate.trafficAdvantage}
+                        </span>
+                      )}
+                    </div>
                   )}
                 </div>
                 <button
@@ -2278,7 +2326,7 @@ export const PassengerApp: React.FC<PassengerAppProps> = ({
                 </button>
               </div>
 
-              {/* 3 Tall Side-by-Side Vehicle Tier Cards */}
+              {/* 3 Tall Side-by-Side Vehicle Tier Cards (Accurate Duration & Pickup per Tier) */}
               {fareEstimate && (
                 <div className="grid grid-cols-3 gap-2">
                   {(
@@ -2286,21 +2334,24 @@ export const PassengerApp: React.FC<PassengerAppProps> = ({
                       {
                         id: 'car' as VehicleType,
                         title: 'CabSafe Go',
-                        subtitle: 'Sedan · 2m',
+                        tierClass: 'AC Sedan',
+                        defaultPickup: '~2m pickup',
                         seats: '4',
                         icon: Car,
                       },
                       {
                         id: 'cng' as VehicleType,
                         title: 'CabSafe Auto',
-                        subtitle: 'Auto · 3m',
+                        tierClass: 'CNG Auto',
+                        defaultPickup: '~3m pickup',
                         seats: '3',
                         icon: Zap,
                       },
                       {
                         id: 'motorcycle' as VehicleType,
                         title: 'CabSafe Moto',
-                        subtitle: 'Moto · 1m',
+                        tierClass: 'Moto Express',
+                        defaultPickup: '~1m pickup',
                         seats: '1',
                         icon: Bike,
                       },
@@ -2309,6 +2360,11 @@ export const PassengerApp: React.FC<PassengerAppProps> = ({
                     const Icon = tier.icon;
                     const active = selectedVehicle === tier.id;
                     const price = fareEstimate.fares[tier.id];
+                    const est = tierEstimates ? tierEstimates[tier.id] : null;
+                    const topMatch = fareEstimate?.candidateRankings?.find((c) => c.vehicleType === tier.id);
+                    const pickupEta = topMatch ? `~${topMatch.etaMinutes}m pickup` : tier.defaultPickup;
+                    const tripDurationText = est?.duration.text || fareEstimate.duration.text;
+
                     return (
                       <button
                         key={tier.id}
@@ -2316,30 +2372,43 @@ export const PassengerApp: React.FC<PassengerAppProps> = ({
                         onClick={() => {
                           setSelectedVehicle(tier.id);
                           // Auto-select the top matching driver for this tier
-                          const topMatch = fareEstimate?.candidateRankings?.find((c) => c.vehicleType === tier.id);
-                          if (topMatch) {
-                            setSelectedCaptainId(topMatch.captainId);
+                          const matched = fareEstimate?.candidateRankings?.find((c) => c.vehicleType === tier.id);
+                          if (matched) {
+                            setSelectedCaptainId(matched.captainId);
                           }
                         }}
-                        className={`p-2.5 rounded-[20px] border text-left flex flex-col justify-between min-h-[112px] transition-all cursor-pointer ${
+                        className={`p-2.5 rounded-[20px] border text-left flex flex-col justify-between min-h-[120px] transition-all cursor-pointer ${
                           active
                             ? 'bg-red-50/70 border-2 border-red-600 shadow-md ring-1 ring-red-600/30'
                             : 'bg-white border-slate-200 hover:border-red-200 shadow-xs'
                         }`}
                       >
                         <div>
-                          <p
-                            className={`text-xs font-extrabold truncate ${
-                              active ? 'text-red-700' : 'text-slate-900'
-                            }`}
-                          >
-                            {tier.title}
+                          <div className="flex items-center justify-between gap-1">
+                            <p
+                              className={`text-xs font-extrabold truncate ${
+                                active ? 'text-red-700' : 'text-slate-900'
+                              }`}
+                            >
+                              {tier.title}
+                            </p>
+                            {tier.id === 'motorcycle' && (
+                              <span className="text-[9px] font-black text-emerald-700 bg-emerald-100/90 px-1 py-0.2 rounded-full whitespace-nowrap">
+                                ⚡ Fastest
+                              </span>
+                            )}
+                          </div>
+
+                          {/* Tier-Specific Trip Duration */}
+                          <p className={`text-xs font-extrabold font-mono mt-0.5 ${active ? 'text-red-700' : 'text-slate-900'}`}>
+                            {tripDurationText}
                           </p>
-                          <p className="text-[10px] text-slate-500 truncate">
-                            {tier.subtitle}
-                          </p>
-                          <div className="flex items-center gap-1 text-[10px] text-slate-600 mt-1.5 font-medium">
-                            <Users className={`w-3 h-3 ${active ? 'text-red-600' : 'text-slate-400'}`} />
+
+                          {/* Driver Pickup ETA & Seat Capacity */}
+                          <div className="flex items-center gap-1 text-[10px] text-slate-500 mt-1 font-medium truncate">
+                            <Clock className="w-2.5 h-2.5 text-slate-400 shrink-0" />
+                            <span>{pickupEta}</span>
+                            <span>·</span>
                             <span>{tier.seats} seat{tier.seats === '1' ? '' : 's'}</span>
                           </div>
                         </div>

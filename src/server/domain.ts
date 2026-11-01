@@ -519,6 +519,63 @@ export function calculateFaresFromDistanceAndDuration(
   return { fares, breakdowns };
 }
 
+export interface TierEstimate {
+  duration: { text: string; value: number };
+  distance: { text: string; value: number };
+  speedLabel: string;
+  trafficAdvantage: string;
+  savingsMinutes?: number;
+}
+
+/**
+ * Calculates realistic duration and distance calibrated according to vehicle dynamics in Tamil Nadu & Chennai:
+ * - Motorcycle: high agility, traffic filtering, ~24% faster trip duration.
+ * - CNG Auto: governed top speed 45-50 km/h, slower on corridors and bypasses, ~25% longer trip duration.
+ * - Car / Sedan: standard arterial cruising speed.
+ */
+export function calculateTierEstimates(
+  baseDistanceMeters: number,
+  baseDurationSeconds: number
+): Record<VehicleType, TierEstimate> {
+  const distKm = baseDistanceMeters / 1000;
+  const distText = distKm < 1 ? `${Math.round(baseDistanceMeters)} m` : `${distKm.toFixed(1)} km`;
+
+  const formatSecs = (sec: number): string => {
+    const mins = Math.max(1, Math.round(sec / 60));
+    if (mins < 60) return `${mins} mins`;
+    const hrs = Math.floor(mins / 60);
+    const rem = mins % 60;
+    return rem === 0 ? `${hrs} ${hrs === 1 ? 'hr' : 'hrs'}` : `${hrs} ${hrs === 1 ? 'hr' : 'hrs'} ${rem} mins`;
+  };
+
+  const motoSeconds = Math.max(90, Math.round(baseDurationSeconds * 0.76));
+  const motoSavings = Math.max(1, Math.round((baseDurationSeconds - motoSeconds) / 60));
+  const autoSeconds = Math.max(120, Math.round(baseDurationSeconds * 1.25));
+  const carSeconds = baseDurationSeconds;
+
+  return {
+    car: {
+      duration: { text: formatSecs(carSeconds), value: carSeconds },
+      distance: { text: distText, value: baseDistanceMeters },
+      speedLabel: 'Arterial speed',
+      trafficAdvantage: 'AC comfort on bypass',
+    },
+    cng: {
+      duration: { text: formatSecs(autoSeconds), value: autoSeconds },
+      distance: { text: distText, value: baseDistanceMeters },
+      speedLabel: 'Governed 45-50 km/h',
+      trafficAdvantage: 'Economical steady commute',
+    },
+    motorcycle: {
+      duration: { text: formatSecs(motoSeconds), value: motoSeconds },
+      distance: { text: distText, value: baseDistanceMeters },
+      speedLabel: 'Agile lane filtering',
+      trafficAdvantage: `⚡ Saves ~${motoSavings} mins in traffic`,
+      savingsMinutes: motoSavings,
+    },
+  };
+}
+
 /**
  * Explainable Multi-Factor Driver Matching Engine
  *
