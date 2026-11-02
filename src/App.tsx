@@ -322,9 +322,11 @@ export default function App() {
           }}
           className="text-lg font-extrabold tracking-tight text-slate-900 font-display whitespace-nowrap shrink-0 flex items-center gap-2"
         >
-          <span className="w-8 h-8 rounded-xl bg-gradient-to-br from-red-600 to-red-700 text-white flex items-center justify-center shadow-xs">
-            <ShieldCheck className="w-4 h-4" />
-          </span>
+          <img
+            src="/cabsafe-logo.jpg"
+            alt="CabSafe Logo"
+            className="w-9 h-9 rounded-xl object-contain shadow-xs border border-red-200 bg-white p-0.5 shrink-0"
+          />
           <div className="flex flex-col">
             <span className="leading-none text-base font-black tracking-tight">CabSafe</span>
             <span className="text-[9px] font-mono font-bold text-slate-400 leading-tight">

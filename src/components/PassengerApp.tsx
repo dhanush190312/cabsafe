@@ -697,26 +697,6 @@ export const PassengerApp: React.FC<PassengerAppProps> = ({
     }
   };
 
-  const handleSimulateCaptainAccept = async () => {
-    if (!activeRide || bookingBusy) return;
-    setBookingBusy(true);
-    setBookingError(null);
-    try {
-      await apiRequest('/admin/simulate-action', {
-        method: 'POST',
-        body: {
-          action: 'accept-ride',
-          rideId: activeRide._id,
-        },
-      });
-      await onRefreshState();
-    } catch (err) {
-      setBookingError((err as Error).message);
-    } finally {
-      setBookingBusy(false);
-    }
-  };
-
   const handleRebookNextCaptain = async () => {
     if (bookingBusy) return;
     setBookingBusy(true);
@@ -809,13 +789,18 @@ export const PassengerApp: React.FC<PassengerAppProps> = ({
       <div className="h-full flex flex-col justify-between p-6 bg-slate-50 text-slate-900 overflow-y-auto">
         <div className="space-y-5">
           <div className="flex items-center justify-between border-b border-slate-200 pb-4">
-            <div>
-              <div className="flex items-center gap-1.5">
+            <div className="flex items-center gap-2.5">
+              <img
+                src="/cabsafe-logo.jpg"
+                alt="CabSafe Logo"
+                className="w-10 h-10 rounded-xl object-contain border border-red-200 bg-white p-0.5 shrink-0 shadow-xs"
+              />
+              <div>
                 <span className="text-xl font-extrabold tracking-tight text-slate-900 font-display">
                   CabSafe
                 </span>
+                <p className="text-xs text-slate-500 mt-0.5">Passenger Executive Mobility · Safe Rides Everywhere</p>
               </div>
-              <p className="text-xs text-slate-500 mt-0.5">Passenger Executive Mobility · Chennai</p>
             </div>
             <div className="flex items-center gap-1 bg-white p-1 rounded-full border border-slate-200 shadow-sm">
               <button
@@ -1491,21 +1476,6 @@ export const PassengerApp: React.FC<PassengerAppProps> = ({
                         Your Start OTP will be securely generated and revealed once a captain accepts. Never share OTP before meeting your driver.
                       </p>
                     </div>
-                  </div>
-
-                  {/* Quick Simulation Bar for convenient testing */}
-                  <div className="bg-slate-100 rounded-2xl p-2 flex items-center justify-between gap-2 border border-slate-200">
-                    <p className="text-[10px] text-slate-600 truncate">
-                      Switch to <strong>Captain App</strong> tab to accept, or:
-                    </p>
-                    <button
-                      type="button"
-                      disabled={bookingBusy}
-                      onClick={handleSimulateCaptainAccept}
-                      className="px-3 py-1 rounded-full bg-slate-900 hover:bg-slate-800 text-white font-bold text-[10px] transition-colors cursor-pointer shadow-xs whitespace-nowrap"
-                    >
-                      {bookingBusy ? 'Accepting…' : 'Accept as Captain'}
-                    </button>
                   </div>
                 </div>
               </div>

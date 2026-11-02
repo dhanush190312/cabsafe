@@ -418,9 +418,10 @@ export function computeCalibratedRoadPhysics(
 
   const baseTravelSeconds = (roadKm / baseSpeedKmH) * 3600 + signalBufferSeconds;
 
-  // 3. Indian Standard Time traffic multiplier
+  // 3. Indian Standard Time traffic multiplier (minimum 1.4x calibration)
   const { multiplier, condition, periodLabel } = getIndianTrafficMultiplier(roadKm);
-  const durationSeconds = Math.max(120, Math.round(baseTravelSeconds * multiplier));
+  const calibratedTrafficMultiplier = Math.max(1.4, multiplier * 1.4);
+  const durationSeconds = Math.max(180, Math.round(baseTravelSeconds * calibratedTrafficMultiplier));
 
   return {
     distanceMeters,
@@ -504,11 +505,12 @@ export async function resolveDistanceAndTime(
           const distMeters = Math.max(300, Math.round(route.distance));
           const rawDuration = Math.max(60, Math.round(route.duration));
 
-          // Calibrate raw OSRM nominal duration with Indian traffic and signal dynamics
+          // Calibrate raw OSRM nominal duration with Indian traffic and signal dynamics (minimum 1.4x calibration)
           const { multiplier } = getIndianTrafficMultiplier(distMeters / 1000);
+          const calibratedTrafficMultiplier = Math.max(1.4, multiplier * 1.4);
           const signalBuffer =
-            distMeters < 20000 ? Math.min(150, Math.round((distMeters / 1000) * 10)) : 60;
-          const durSeconds = Math.max(120, Math.round((rawDuration + signalBuffer) * multiplier));
+            distMeters < 20000 ? Math.min(180, Math.round((distMeters / 1000) * 12)) : 90;
+          const durSeconds = Math.max(180, Math.round((rawDuration + signalBuffer) * calibratedTrafficMultiplier));
 
           const kmText = formatDistanceText(distMeters);
           const minText = formatDurationText(durSeconds);

@@ -548,28 +548,28 @@ export function calculateTierEstimates(
     return rem === 0 ? `${hrs} ${hrs === 1 ? 'hr' : 'hrs'}` : `${hrs} ${hrs === 1 ? 'hr' : 'hrs'} ${rem} mins`;
   };
 
-  const motoSeconds = Math.max(90, Math.round(baseDurationSeconds * 0.76));
-  const motoSavings = Math.max(1, Math.round((baseDurationSeconds - motoSeconds) / 60));
-  const autoSeconds = Math.max(120, Math.round(baseDurationSeconds * 1.25));
   const carSeconds = baseDurationSeconds;
+  const autoSeconds = Math.max(120, Math.round(carSeconds * 1.20));
+  const motoSeconds = Math.max(90, Math.round(carSeconds * 0.85));
+  const motoSavings = Math.max(1, Math.round((carSeconds - motoSeconds) / 60));
 
   return {
     car: {
       duration: { text: formatSecs(carSeconds), value: carSeconds },
       distance: { text: distText, value: baseDistanceMeters },
-      speedLabel: 'Arterial speed',
-      trafficAdvantage: 'AC comfort on bypass',
+      speedLabel: 'Standard Arterial Speed',
+      trafficAdvantage: 'AC comfort across bypasses',
     },
     cng: {
       duration: { text: formatSecs(autoSeconds), value: autoSeconds },
       distance: { text: distText, value: baseDistanceMeters },
-      speedLabel: 'Governed 45-50 km/h',
-      trafficAdvantage: 'Economical steady commute',
+      speedLabel: 'Governed 45 km/h',
+      trafficAdvantage: 'Steady economical commute',
     },
     motorcycle: {
       duration: { text: formatSecs(motoSeconds), value: motoSeconds },
       distance: { text: distText, value: baseDistanceMeters },
-      speedLabel: 'Agile lane filtering',
+      speedLabel: 'Agile Lane Filtering',
       trafficAdvantage: `⚡ Saves ~${motoSavings} mins in traffic`,
       savingsMinutes: motoSavings,
     },

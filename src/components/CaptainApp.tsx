@@ -397,11 +397,18 @@ export const CaptainApp: React.FC<CaptainAppProps> = ({
       <div className="h-full flex flex-col justify-between p-6 bg-[#0B0D12] text-white overflow-y-auto">
         <div className="space-y-4">
           <div className="flex items-center justify-between border-b border-white/10 pb-3.5">
-            <div>
-              <span className="text-xl font-extrabold tracking-tight text-white font-display">
-                CabSafe Captain
-              </span>
-              <p className="text-xs text-slate-400">Driver Dispatch &amp; Telemetry Console</p>
+            <div className="flex items-center gap-2.5">
+              <img
+                src="/cabsafe-logo.jpg"
+                alt="CabSafe Logo"
+                className="w-10 h-10 rounded-xl object-contain border border-white/10 bg-white p-0.5 shrink-0"
+              />
+              <div>
+                <span className="text-xl font-extrabold tracking-tight text-white font-display">
+                  CabSafe Captain
+                </span>
+                <p className="text-xs text-slate-400">Driver Dispatch &amp; Telemetry Console</p>
+              </div>
             </div>
             <div className="flex items-center gap-1 bg-[#181B22] p-1 rounded-full border border-white/10">
               <button

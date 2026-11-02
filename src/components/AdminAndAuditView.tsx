@@ -71,15 +71,22 @@ export const AdminAndAuditView: React.FC<AdminAndAuditViewProps> = ({
       <div className="max-w-7xl mx-auto w-full px-6 py-6 space-y-6 text-slate-800">
         {/* Header */}
         <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4 border-b border-slate-200 pb-4">
-          <div>
-            <div className="flex items-center gap-2">
-              <h1 className="text-xl font-extrabold text-slate-900 font-display">
-                Chennai Dispatch Operations &amp; Explainable Matching Console
-              </h1>
+          <div className="flex items-center gap-3">
+            <img
+              src="/cabsafe-logo.jpg"
+              alt="CabSafe Logo"
+              className="w-12 h-12 rounded-2xl object-contain border border-red-200 bg-white p-1 shadow-sm shrink-0"
+            />
+            <div>
+              <div className="flex items-center gap-2">
+                <h1 className="text-xl font-extrabold text-slate-900 font-display">
+                  CabSafe Dispatch Operations &amp; Explainable Matching Console
+                </h1>
+              </div>
+              <p className="text-xs text-slate-500 mt-0.5">
+                Safe Rides Everywhere · Live Fleet Telemetry, Real-Time Dispatch &amp; Ranking Audits
+              </p>
             </div>
-            <p className="text-xs text-slate-500 mt-0.5">
-              Provisional Chennai Operating Boundary (13.0827°N, 80.2707°E) · Live Fleet Telemetry &amp; Ranking Audits
-            </p>
           </div>
           <div className="flex items-center gap-2.5">
             <button
