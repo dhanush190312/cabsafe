@@ -1194,7 +1194,7 @@ export const CaptainApp: React.FC<CaptainAppProps> = ({
             <div className="bg-[#181B22] border border-white/10 rounded-full px-4 py-2.5 text-center">
               <p className="text-xs font-bold text-white">
                 {captain.status === 'active'
-                  ? '01 · Online in Chennai — Awaiting Ride Requests'
+                  ? '01 · Online & Active — Awaiting Ride Requests'
                   : '01 · You are Offline — Toggle Online to Receive Rides'}
               </p>
             </div>

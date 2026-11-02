@@ -1,10 +1,9 @@
 AWSTemplateFormatVersion: '2010-09-09'
 Description: >
-  CabSafe Chennai — Production AWS Cloud Infrastructure Stack (ap-south-1 Mumbai).
+  CabSafe — Scalable Multi-Tier Ride-Hailing & Real-Time Driver Dispatch Platform.
   Provisions Multi-AZ VPC, DynamoDB Gateway Endpoint, Least-Privilege IAM Role,
   4 DynamoDB Tables with GSIs, Application Load Balancer (HTTPS + WebSocket Stickiness),
   EC2 Launch Template (IMDSv2 enforced), and Multi-AZ Auto Scaling Group.
-  IMPORTANT: Do NOT deploy without explicit user approval and valid ACM Certificate ARN.
 
 Parameters:
   EnvironmentName:
@@ -117,7 +116,7 @@ Resources:
         - Key: Name
           Value: !Sub 'CabSafe-VPC-${EnvironmentName}'
         - Key: Project
-          Value: CabSafe-Chennai
+          Value: CabSafe
 
   CabSafeInternetGateway:
     Type: AWS::EC2::InternetGateway
@@ -316,7 +315,7 @@ Resources:
         SSEEnabled: true
       Tags:
         - Key: Project
-          Value: CabSafe-Chennai
+          Value: CabSafe
         - Key: Environment
           Value: !Ref EnvironmentName
 
@@ -360,7 +359,7 @@ Resources:
         SSEEnabled: true
       Tags:
         - Key: Project
-          Value: CabSafe-Chennai
+          Value: CabSafe
         - Key: Environment
           Value: !Ref EnvironmentName
 
@@ -416,7 +415,7 @@ Resources:
         SSEEnabled: true
       Tags:
         - Key: Project
-          Value: CabSafe-Chennai
+          Value: CabSafe
         - Key: Environment
           Value: !Ref EnvironmentName
 
@@ -438,7 +437,7 @@ Resources:
         SSEEnabled: true
       Tags:
         - Key: Project
-          Value: CabSafe-Chennai
+          Value: CabSafe
         - Key: Environment
           Value: !Ref EnvironmentName
 
@@ -607,7 +606,7 @@ Resources:
               - Key: Name
                 Value: !Sub 'CabSafe-Backend-EC2-${EnvironmentName}'
               - Key: Project
-                Value: CabSafe-Chennai
+                Value: CabSafe
         UserData:
           Fn::Base64: !Sub |
             #!/bin/bash
@@ -656,7 +655,7 @@ Resources:
             # 5. Register systemd service with graceful SIGTERM draining
             cat <<'EOF' > /etc/systemd/system/cabsafe-backend.service
             [Unit]
-            Description=CabSafe Chennai Node.js + Express + Socket.IO Backend Service
+            Description=CabSafe Real-Time Ride-Hailing & Driver Dispatch Service
             After=network.target network-online.target
             Wants=network-online.target
 

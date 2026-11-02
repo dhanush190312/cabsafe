@@ -328,7 +328,7 @@ export default function App() {
           <div className="flex flex-col">
             <span className="leading-none text-base font-black tracking-tight">CabSafe</span>
             <span className="text-[9px] font-mono font-bold text-slate-400 leading-tight">
-              Chennai · ap-south-1
+              Safe Rides Everywhere
             </span>
           </div>
         </a>

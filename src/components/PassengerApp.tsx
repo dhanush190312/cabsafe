@@ -398,17 +398,17 @@ export const PassengerApp: React.FC<PassengerAppProps> = ({
     const effectiveDestCoords = overrideDestCoords ?? destinationCoords;
 
     if (!effectivePickup.trim() && !effectiveDest.trim()) {
-      setBookingError('Please choose your pick-up and drop-off locations in Chennai first.');
+      setBookingError('Please choose your pick-up and drop-off locations first.');
       return;
     }
     if (!effectivePickup.trim()) {
       setActiveField('pickup');
-      setBookingError('Please select a pick-up location in Chennai.');
+      setBookingError('Please select a pick-up location.');
       return;
     }
     if (!effectiveDest.trim()) {
       setActiveField('destination');
-      setBookingError('Please select a drop-off destination in Chennai.');
+      setBookingError('Please select a drop-off destination.');
       return;
     }
     if (effectivePickup.trim().toLowerCase() === effectiveDest.trim().toLowerCase()) {
@@ -2018,7 +2018,7 @@ export const PassengerApp: React.FC<PassengerAppProps> = ({
                 </h2>
                 <p className="text-[10px] text-slate-500">
                   {activeField === 'pickup'
-                    ? 'Step 1: Set your pick-up point in Chennai'
+                    ? 'Step 1: Set your pick-up point'
                     : `Step 2: Destination from ${pickup ? pickup.split(',')[0] : 'pick-up'}`}
                 </p>
               </div>
@@ -2063,7 +2063,7 @@ export const PassengerApp: React.FC<PassengerAppProps> = ({
                       <span className="text-[10px] font-bold text-red-600 uppercase">
                         Pick-up Address (Step 1)
                       </span>
-                      <span className="text-[10px] text-slate-400 font-mono">Chennai Area</span>
+                      <span className="text-[10px] text-slate-400 font-mono">Service Area</span>
                     </div>
                     <div className="relative">
                       <MapPin className="w-4 h-4 text-red-600 absolute left-3 top-2.5" />
@@ -2077,7 +2077,7 @@ export const PassengerApp: React.FC<PassengerAppProps> = ({
                           setPickupCoords(null);
                           setFareEstimate(null);
                         }}
-                        placeholder="Search Chennai pick-up locality (e.g. T. Nagar, Central)"
+                        placeholder="Search pick-up locality or hub (e.g. Central, T. Nagar, Airport)"
                         className="w-full pl-9 pr-9 py-2 rounded-full bg-white border border-red-500 ring-2 ring-red-500/20 text-xs font-medium text-slate-900 focus:outline-none shadow-xs"
                       />
                       {pickup && (
@@ -2099,7 +2099,7 @@ export const PassengerApp: React.FC<PassengerAppProps> = ({
                       <span className="text-[10px] font-bold text-red-600 uppercase">
                         Drop-off Destination (Step 2)
                       </span>
-                      <span className="text-[10px] text-slate-400 font-mono">Chennai Area</span>
+                      <span className="text-[10px] text-slate-400 font-mono">Service Area</span>
                     </div>
                     <div className="relative">
                       <Navigation className="w-4 h-4 text-red-600 absolute left-3 top-2.5" />
@@ -2113,7 +2113,7 @@ export const PassengerApp: React.FC<PassengerAppProps> = ({
                           setDestinationCoords(null);
                           setFareEstimate(null);
                         }}
-                        placeholder="Search Chennai drop-off (e.g. Anna Nagar, OMR, Airport)"
+                        placeholder="Search drop-off destination (e.g. Anna Nagar, OMR, Airport)"
                         className="w-full pl-9 pr-9 py-2 rounded-full bg-white border border-red-500 ring-2 ring-red-500/20 text-xs font-medium text-slate-900 focus:outline-none shadow-xs"
                       />
                       {destination && (
@@ -2137,11 +2137,11 @@ export const PassengerApp: React.FC<PassengerAppProps> = ({
                 <div className="flex items-center justify-between mb-1 px-1">
                   <p className="text-[11px] font-bold text-slate-700">
                     {activeField === 'pickup'
-                      ? 'Suggested Chennai Pick-up Hubs'
-                      : 'Popular Chennai Drop-off Destinations'}
+                      ? 'Suggested Pick-up Hubs'
+                      : 'Popular Drop-off Destinations'}
                   </p>
                   <span className="text-[10px] font-mono text-red-600 font-bold">
-                    {searchingSuggestions ? 'Searching…' : 'Chennai Fast-Select'}
+                    {searchingSuggestions ? 'Searching…' : 'Fast Select'}
                   </span>
                 </div>
                 <div className="space-y-1 max-h-[145px] overflow-y-auto no-scrollbar">
@@ -2203,7 +2203,7 @@ export const PassengerApp: React.FC<PassengerAppProps> = ({
               className="w-full min-h-[42px] rounded-full bg-red-600 hover:bg-red-700 disabled:bg-slate-300 text-white font-extrabold text-sm transition-colors cursor-pointer shadow-md"
             >
               {bookingBusy
-                ? 'Validating Chennai Route...'
+                ? 'Validating Route...'
                 : activeField === 'pickup' && !destinationCoords
                   ? 'Continue to Step 2: Set Drop-off →'
                   : 'Confirm Route & Choose Ride →'}
@@ -2219,7 +2219,7 @@ export const PassengerApp: React.FC<PassengerAppProps> = ({
                     03 · Confirm Pickup &amp; Route
                   </span>
                   <h2 className="text-base font-extrabold text-slate-900 mt-1">
-                    Review Route on Chennai Map
+                    Review Route on Live Map
                   </h2>
                 </div>
                 <button
@@ -2545,7 +2545,7 @@ export const PassengerApp: React.FC<PassengerAppProps> = ({
                       {otherTierDrivers.length > 0 && (
                         <div className="pt-1 border-t border-slate-100">
                           <p className="text-[10px] text-slate-400 font-semibold mb-1 px-1">
-                            Other Active Chennai Drivers:
+                            Other Active Fleet Drivers:
                           </p>
                           <div className="space-y-1">
                             {otherTierDrivers.map((cand) => {
