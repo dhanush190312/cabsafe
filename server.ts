@@ -305,7 +305,7 @@ async function startServer() {
     res.status(200).send('ok');
   });
 
-  apiRouter.get('/api/health', async (_req, res) => {
+  const handleHealthCheck = async (_req: Request, res: Response) => {
     if (isDraining) {
       res.status(503).json({
         status: 'draining',
@@ -321,7 +321,7 @@ async function startServer() {
           status: 'healthy',
           persistenceMode: 'dynamodb',
           dynamodb: dbHealth,
-          operatingArea: 'Chennai, Tamil Nadu, India',
+          operatingArea: 'Tamil Nadu Statewide & Chennai Metro, India',
           uptimeSeconds: Math.floor(process.uptime()),
           timestamp: new Date().toISOString(),
         });
@@ -340,11 +340,16 @@ async function startServer() {
       status: 'healthy',
       persistenceMode: 'file',
       awsRegion: process.env.AWS_REGION || 'ap-south-1',
-      operatingArea: 'Chennai, Tamil Nadu, India',
+      operatingArea: 'Tamil Nadu Statewide & Chennai Metro, India',
       uptimeSeconds: Math.floor(process.uptime()),
       timestamp: new Date().toISOString(),
     });
-  });
+  };
+
+  apiRouter.get('/api/health', handleHealthCheck);
+  apiRouter.get('/health', handleHealthCheck);
+  app.get('/health', handleHealthCheck);
+  app.get('/api/health', handleHealthCheck);
 
   // ---------------- User Routes (/users/*) ----------------
   apiRouter.post('/users/register', async (req: Request, res: Response) => {
