@@ -278,11 +278,9 @@ Resources:
           SourceSecurityGroupId: !Ref CabSafeAlbSecurityGroup
           Description: 'Allow HTTP/WebSocket traffic on port 3000 strictly from CabSafe ALB'
       SecurityGroupEgress:
-        - IpProtocol: tcp
-          FromPort: 443
-          ToPort: 443
+        - IpProtocol: -1
           CidrIp: 0.0.0.0/0
-          Description: 'Allow outbound HTTPS 443 to DynamoDB Gateway Endpoint, SSM, and OSM/OSRM fallback'
+          Description: 'Allow all outbound traffic for OS updates, package installs, DynamoDB, and external routing APIs'
       Tags:
         - Key: Name
           Value: !Sub 'CabSafe-EC2-SG-${EnvironmentName}'
@@ -667,8 +665,9 @@ Resources:
             User=cabsafe
             Group=cabsafe
             WorkingDirectory=/opt/cabsafe
+            Environment="PATH=/usr/local/bin:/usr/bin:/bin:/opt/cabsafe/node_modules/.bin"
             EnvironmentFile=/opt/cabsafe/.env
-            ExecStart=/usr/bin/npx tsx server.ts
+            ExecStart=/opt/cabsafe/node_modules/.bin/tsx server.ts
             Restart=on-failure
             RestartSec=5
             KillSignal=SIGTERM
@@ -692,8 +691,8 @@ Resources:
     Properties:
       AutoScalingGroupName: !Sub 'CabSafe-ASG-${EnvironmentName}'
       VPCZoneIdentifier:
-        - !Ref PrivateAppSubnet1
-        - !Ref PrivateAppSubnet2
+        - !Ref PublicSubnet1
+        - !Ref PublicSubnet2
       LaunchTemplate:
         LaunchTemplateId: !Ref CabSafeLaunchTemplate
         Version: !GetAtt CabSafeLaunchTemplate.LatestVersionNumber
