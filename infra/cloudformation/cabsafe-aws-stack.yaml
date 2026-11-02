@@ -616,7 +616,14 @@ Resources:
 
             # 1. Install Node.js 20 LTS and Git on Amazon Linux 2023
             dnf update -y
-            dnf install -y git nodejs npm
+            dnf install -y git nodejs20 nodejs20-npm
+            if ! command -v node &>/dev/null; then
+              alternatives --set node /usr/bin/node-20 || true
+            fi
+            if ! command -v npm &>/dev/null; then
+              alternatives --set npm /usr/bin/npm-20 || true
+            fi
+            echo "Node: $(node -v), NPM: $(npm -v)"
 
             # 2. Create dedicated non-root service user
             id -u cabsafe &>/dev/null || useradd --system --create-home --shell /sbin/nologin cabsafe
@@ -632,8 +639,9 @@ Resources:
               git pull origin "${GitBranch}"
             fi
             cd /opt/cabsafe
-            npm install --legacy-peer-deps
+            npm install --include=dev --legacy-peer-deps
             npm run build
+            chmod +x /opt/cabsafe/node_modules/.bin/tsx || true
             chown -R cabsafe:cabsafe /opt/cabsafe
 
             # 4. Write runtime environment configuration
@@ -666,7 +674,7 @@ Resources:
             WorkingDirectory=/opt/cabsafe
             Environment="PATH=/usr/local/bin:/usr/bin:/bin:/opt/cabsafe/node_modules/.bin"
             EnvironmentFile=/opt/cabsafe/.env
-            ExecStart=/opt/cabsafe/node_modules/.bin/tsx server.ts
+            ExecStart=/usr/bin/npm start
             Restart=on-failure
             RestartSec=5
             KillSignal=SIGTERM
