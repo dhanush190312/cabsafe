@@ -293,7 +293,7 @@ Resources:
     DeletionPolicy: Retain
     UpdateReplacePolicy: Retain
     Properties:
-      TableName: CabSafe-Users
+      TableName: !Sub 'CabSafe-Users-${AWS::StackName}'
       BillingMode: PAY_PER_REQUEST
       AttributeDefinitions:
         - AttributeName: userId
@@ -325,7 +325,7 @@ Resources:
     DeletionPolicy: Retain
     UpdateReplacePolicy: Retain
     Properties:
-      TableName: CabSafe-Captains
+      TableName: !Sub 'CabSafe-Captains-${AWS::StackName}'
       BillingMode: PAY_PER_REQUEST
       AttributeDefinitions:
         - AttributeName: captainId
@@ -369,7 +369,7 @@ Resources:
     DeletionPolicy: Retain
     UpdateReplacePolicy: Retain
     Properties:
-      TableName: CabSafe-Rides
+      TableName: !Sub 'CabSafe-Rides-${AWS::StackName}'
       BillingMode: PAY_PER_REQUEST
       AttributeDefinitions:
         - AttributeName: rideId
@@ -423,7 +423,7 @@ Resources:
   CabSafeTokenBlacklistTable:
     Type: AWS::DynamoDB::Table
     Properties:
-      TableName: CabSafe-TokenBlacklist
+      TableName: !Sub 'CabSafe-TokenBlacklist-${AWS::StackName}'
       BillingMode: PAY_PER_REQUEST
       AttributeDefinitions:
         - AttributeName: tokenHash
